@@ -130,3 +130,5 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
+TAILWIND_APP_NAME = 'theme'
