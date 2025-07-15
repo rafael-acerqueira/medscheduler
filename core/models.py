@@ -26,6 +26,21 @@ class User(AbstractUser):
     def is_doctor(self):
         return self.role == self.DOCTOR
 
+    def has_completed_profile(self):
+        if self.is_patient():
+            try:
+                profile = self.patientprofile
+                return all([profile.cpf, profile.birthdate])
+            except PatientProfile.DoesNotExist:
+                return False
+        elif self.is_doctor():
+            try:
+                profile = self.doctorprofile
+                return all([profile.crm, profile.specialty])
+            except DoctorProfile.DoesNotExist:
+                return False
+        return True
+
 
 class PatientProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
