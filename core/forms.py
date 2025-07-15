@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 
-from .models import User
+from .models import User, PatientProfile, DoctorProfile
 
 ROLE_CHOICES = [user_role for user_role in User.ROLE_CHOICES if user_role[0] != User.ADMIN]
 
@@ -81,3 +81,53 @@ class LoginForm(AuthenticationForm):
             'autocomplete': 'current-password',
         })
     )
+
+class PatientProfileForm(forms.ModelForm):
+    class Meta:
+        model = PatientProfile
+        fields = ['cpf', 'birthdate', 'health_plan']
+        labels = {
+            'cpf': 'CPF',
+            'birthdate': 'Birthdate',
+            'health_plan': 'Health Plan'
+        }
+        widgets = {
+            'cpf': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Enter your CPF',
+                'autocomplete': 'cpf',
+                'label': 'CPF'
+            }),
+            'health_plan': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Enter your Health Plan',
+                'autocomplete': 'health_plan',
+            }),
+            'birthdate': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select your birthdate',
+                'autocomplete': 'bday',
+            })
+        }
+
+class DoctorProfileForm(forms.ModelForm):
+    class Meta:
+        model = DoctorProfile
+        fields = ['crm', 'specialty']
+        labels = {
+            'crm': 'CRM',
+            'specialty': 'Specialty'
+        }
+        widgets = {
+            'crm': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Enter your CRM',
+                'autocomplete': 'crm',
+            }),
+            'specialty': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Enter your Specialty',
+                'autocomplete': 'specialty',
+            })
+        }
