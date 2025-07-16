@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col items-center justify-start bg-gray-100 py-10">
+    <div class="w-full max-w-6xl">
+        <h2 class="text-3xl font-bold mb-8 text-blue-600 text-center">User List</h2>
+
+        <form method="get" class="flex flex-wrap gap-4 mb-8 justify-center items-end">
+            <input
+                type="text"
+                name="search"
+                placeholder="Name or email"
+                value="{{ search }}"
+                class="w-56 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
+            >
+            <select name="role"
+                    class="w-48 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600 transition">
+                <option value="">All roles</option>
+                {% for value, label in role_choices %}
+                    <option value="{{ value }}" {% if value == role %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow transition">
+                Filter
+            </button>
+        </form>
+
+        <div class="overflow-x-auto bg-white rounded-2xl shadow-lg">
+            <table class="min-w-full border border-gray-200 rounded-xl">
+                <thead>
+                    <tr class="bg-blue-50 text-blue-900">
+                        <th class="p-4 font-semibold">Name</th>
+                        <th class="p-4 font-semibold">Email</th>
+                        <th class="p-4 font-semibold">Role</th>
+                        <th class="p-4 font-semibold">Status</th>
+                        <th class="p-4 font-semibold">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr class="border-t border-gray-100 hover:bg-blue-50 transition">
+                        <td class="p-4">{{ user.get_full_name }}</td>
+                        <td class="p-4">{{ user.email }}</td>
+                        <td class="p-4">{{ user.get_role_display }}</td>
+                        <td class="p-4">
+                            {% if user.is_active %}
+                                <span class="inline-block px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 rounded-lg">Active</span>
+                            {% else %}
+                                <span class="inline-block px-2 py-1 text-xs font-semibold bg-red-100 text-red-700 rounded-lg">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 space-x-3">
+                            <a href="{% url 'edit-profile-admin' user.id %}"
+                               class="text-blue-600 font-semibold hover:underline">Edit</a>
+                            {% if user.is_active %}
+                                <a href="{% url 'toggle-user-status' user.id %}"
+                                   class="text-red-600 font-semibold hover:underline">Deactivate</a>
+                            {% else %}
+                                <a href="{% url 'toggle-user-status' user.id %}"
+                                   class="text-green-600 font-semibold hover:underline">Activate</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="p-4 text-center text-gray-500">No users found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex justify-center mt-8">
+            <nav class="inline-flex space-x-1">
+                {% if users.has_previous %}
+                    <a href="?page=1{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}"
+                       class="px-3 py-1 rounded-lg border border-gray-300 bg-white hover:bg-blue-50 transition">First</a>
+                    <a href="?page={{ users.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}"
+                       class="px-3 py-1 rounded-lg border border-gray-300 bg-white hover:bg-blue-50 transition">Previous</a>
+                {% endif %}
+                <span class="px-3 py-1 bg-gray-100 border border-gray-300 rounded-lg">{{ users.number }} / {{ users.paginator.num_pages }}</span>
+                {% if users.has_next %}
+                    <a href="?page={{ users.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}"
+                       class="px-3 py-1 rounded-lg border border-gray-300 bg-white hover:bg-blue-50 transition">Next</a>
+                    <a href="?page={{ users.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if role %}&role={{ role }}{% endif %}"
+                       class="px-3 py-1 rounded-lg border border-gray-300 bg-white hover:bg-blue-50 transition">Last</a>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}

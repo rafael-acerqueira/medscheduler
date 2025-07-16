@@ -26,6 +26,9 @@ class User(AbstractUser):
     def is_doctor(self):
         return self.role == self.DOCTOR
 
+    def is_admin(self):
+        return self.role == self.ADMIN
+
     def has_completed_profile(self):
         if self.is_patient():
             try:

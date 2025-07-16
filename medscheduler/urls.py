@@ -19,7 +19,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from core.forms import LoginForm
-from core.views import register, profile, edit_profile
+from core.views import register, profile, edit_profile, user_list, edit_profile_admin, toggle_user_status
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,5 +27,8 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='login.html', authentication_form=LoginForm), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('profile/', profile, name='profile'),
-    path('profile/edit/', edit_profile, name='edit-profile')
+    path('profile/edit/', edit_profile, name='edit-profile'),
+    path('users/', user_list, name='user-list'),
+    path('users/<int:user_id>/edit/', edit_profile_admin, name='edit-profile-admin'),
+    path('users/<int:user_id>/toggle/', toggle_user_status, name='toggle-user-status')
 ]
