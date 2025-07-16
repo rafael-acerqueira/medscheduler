@@ -64,6 +64,26 @@ class UserRegistrationForm(forms.ModelForm):
             user.save()
         return user
 
+class UserEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'First name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Last name'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Email address'
+            }),
+        }
+
+
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
         label="Username",
@@ -111,6 +131,16 @@ class PatientProfileForm(forms.ModelForm):
             })
         }
 
+    def clean_cpf(self):
+        cpf = self.cleaned_data['cpf']
+        qs = PatientProfile.objects.filter(cpf=cpf)
+
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError("There is already a patient with this CPF.")
+        return cpf
+
 class DoctorProfileForm(forms.ModelForm):
     class Meta:
         model = DoctorProfile
@@ -131,3 +161,12 @@ class DoctorProfileForm(forms.ModelForm):
                 'autocomplete': 'specialty',
             })
         }
+
+    def clean_crm(self):
+        crm = self.cleaned_data['crm']
+        qs = DoctorProfile.objects.filter(crm=crm)
+        if self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError("There is already a doctor with this CRM.")
+        return crm
