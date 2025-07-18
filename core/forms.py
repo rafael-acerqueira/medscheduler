@@ -235,3 +235,16 @@ class CustomPasswordChangeForm(PasswordChangeForm):
         }),
         help_text="Enter the same password as before, for verification.",
     )
+
+
+class ConfirmPasswordForm(forms.Form):
+    password = forms.CharField(
+        label="Password",
+        strip=False,
+        widget=forms.PasswordInput(attrs={
+            'autocomplete': 'current-password',
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+            'placeholder': 'Enter your password'
+        }),
+        help_text="Type your password to confirm this action."
+    )

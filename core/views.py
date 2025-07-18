@@ -1,10 +1,10 @@
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
-from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm
+from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm
 from .models import User
 
 
@@ -164,3 +164,23 @@ def user_list(request):
         'page_obj': page_obj,
     }
     return render(request, 'user_list.html', context)
+
+
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        form = ConfirmPasswordForm(request.POST)
+        if form.is_valid():
+            password = form.cleaned_data['password']
+            user = request.user
+            if user.check_password(password):
+                user.delete()
+                messages.success(request, "Your account has been deleted. We're sorry to see you go!")
+                logout(request)
+                return redirect('login')
+            else:
+                messages.error(request, "Incorrect password. Please try again.")
+    else:
+        form = ConfirmPasswordForm()
+
+    return render(request, 'account_delete_confirm.html', {'form': form})
