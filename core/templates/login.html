@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+  <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+    <h1 class="text-3xl font-bold text-blue-600 text-center mb-2">Sign in to your account</h1>
+    <p class="text-center text-gray-500 mb-6">Please enter your credentials</p>
+    {% if form.errors %}
+      <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded mb-4 text-sm">
+        <ul>
+          {% for field in form %}
+            {% for error in field.errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        {{ form.username.label_tag }}{% if form.username.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
+        {{ form.username }}
+        {% if form.username.help_text %}
+          <p class="text-xs text-gray-500 mt-1">{{ form.username.help_text }}</p>
+        {% endif %}
+      </div>
+      <div>
+        {{ form.password.label_tag }}{% if form.password.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
+        {{ form.password }}
+      </div>
+      <div class="flex justify-end">
+        <a href="{% url 'password_reset' %}" class="text-sm text-blue-600 hover:underline font-medium transition">
+          Forgot your password?
+        </a>
+      </div>
+      <button
+        type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition"
+      >
+        Sign In
+      </button>
+    </form>
+    <p class="text-center text-sm text-gray-500 mt-6">
+      Don't have an account?
+      <a href="{% url 'register' %}" class="text-blue-600 hover:underline">Register here</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
