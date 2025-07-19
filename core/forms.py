@@ -144,10 +144,10 @@ class PatientProfileForm(forms.ModelForm):
 class DoctorProfileForm(forms.ModelForm):
     class Meta:
         model = DoctorProfile
-        fields = ['crm', 'specialty']
+        fields = ['crm', 'specialties']
         labels = {
             'crm': 'CRM',
-            'specialty': 'Specialty'
+            'specialties': 'Specialties'
         }
         widgets = {
             'crm': forms.TextInput(attrs={
@@ -155,7 +155,7 @@ class DoctorProfileForm(forms.ModelForm):
                 'placeholder': 'Enter your CRM',
                 'autocomplete': 'crm',
             }),
-            'specialty': forms.TextInput(attrs={
+            'specialties': forms.SelectMultiple(attrs={
                 'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
                 'placeholder': 'Enter your Specialty',
                 'autocomplete': 'specialty',

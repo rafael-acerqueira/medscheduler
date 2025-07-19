@@ -44,6 +44,11 @@ class User(AbstractUser):
                 return False
         return True
 
+class Specialty(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
 
 class PatientProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -57,9 +62,13 @@ class PatientProfile(models.Model):
 class DoctorProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     crm = models.CharField(max_length=20, unique=True)
-    specialty = models.CharField(max_length=100)
     phone = models.CharField(max_length=20, blank=True)
+
+    specialties = models.ManyToManyField(Specialty, related_name='doctors', blank=True)
 
     def __str__(self):
         return f"Doctor: {self.user.get_full_name()}"
+
+
+
 
