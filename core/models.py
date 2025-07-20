@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
 
@@ -46,9 +47,20 @@ class User(AbstractUser):
 
 class Specialty(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if Specialty.objects.exclude(pk=self.pk).filter(name__iexact=self.name.strip()).exists():
+            raise ValidationError("A specialty with this name already exists.")
+        self.name = self.name.strip().title()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+
+        super().save(*args, **kwargs)
 
 class PatientProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
