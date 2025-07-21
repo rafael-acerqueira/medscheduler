@@ -30,7 +30,7 @@ def profile(request):
         profile = getattr(user, 'doctorprofile', None)
         form_class = DoctorProfileForm
     else:
-        return redirect('home')
+        return redirect('/admin/')
 
 
     if profile is None:
