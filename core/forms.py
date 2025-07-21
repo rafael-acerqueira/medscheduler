@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, PasswordChangeForm
 
-from .models import User, PatientProfile, DoctorProfile
+from .models import User, PatientProfile, DoctorProfile, Specialty, Appointment
 
 ROLE_CHOICES = [user_role for user_role in User.ROLE_CHOICES if user_role[0] != User.ADMIN]
 
@@ -248,3 +248,21 @@ class ConfirmPasswordForm(forms.Form):
         }),
         help_text="Type your password to confirm this action."
     )
+
+
+class AppointmentForm(forms.ModelForm):
+    class Meta:
+        model = Appointment
+        fields = ['specialty', 'doctor', 'date', 'time', 'reason']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'time': forms.TimeInput(attrs={'type': 'time'}),
+            'reason': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Describe the reason for your appointment'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        self.fields['doctor'].queryset = User.objects.filter(role=User.DOCTOR, is_active=True)
+        self.fields['specialty'].queryset = Specialty.objects.filter(is_active=True)
