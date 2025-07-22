@@ -84,3 +84,36 @@ class DoctorProfile(models.Model):
 
 
 
+class Appointment(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+        ('completed', 'Completed'),
+    ]
+
+    patient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='appointments_as_patient',
+        limit_choices_to={'role': 'patient'}
+    )
+    doctor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='appointments_as_doctor',
+        limit_choices_to={'role': 'doctor'}
+    )
+    specialty = models.ForeignKey('Specialty', on_delete=models.PROTECT)
+    date = models.DateField()
+    time = models.TimeField()
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='pending')
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('doctor', 'date', 'time')
+        ordering = ['date', 'time']
+
+    def __str__(self):
+        return f"{self.patient} with {self.doctor} on {self.date} at {self.time}"

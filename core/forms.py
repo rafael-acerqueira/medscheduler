@@ -1,7 +1,10 @@
+import datetime
+from django.utils import timezone
+
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, PasswordChangeForm
 
-from .models import User, PatientProfile, DoctorProfile
+from .models import User, PatientProfile, DoctorProfile, Specialty, Appointment
 
 ROLE_CHOICES = [user_role for user_role in User.ROLE_CHOICES if user_role[0] != User.ADMIN]
 
@@ -248,3 +251,133 @@ class ConfirmPasswordForm(forms.Form):
         }),
         help_text="Type your password to confirm this action."
     )
+
+
+
+
+WORK_START_HOUR = 8
+WORK_END_HOUR = 18
+DISABLED_WEEKDAYS = [5, 6]  # 5 = Saturday, 6 = Sunday
+HOLIDAYS = [  # yyyy-mm-dd
+    '2024-12-25',
+    '2025-01-01',
+]
+
+class AppointmentForm(forms.ModelForm):
+    class Meta:
+        model = Appointment
+        fields = ['specialty', 'doctor', 'date', 'time', 'reason']
+        widgets = {
+            'specialty': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select a specialty'
+            }),
+            'doctor': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select a doctor'
+            }),
+            'date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select a date',
+                'autocomplete': 'off',
+            }),
+            'time': forms.TimeInput(attrs={
+                'type': 'time',
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select a time',
+                'autocomplete': 'off',
+            }),
+            'reason': forms.Textarea(attrs={
+                'rows': 3,
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Describe the reason for your appointment',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        self.fields['doctor'].queryset = User.objects.filter(role=User.DOCTOR, is_active=True)
+        self.fields['specialty'].queryset = Specialty.objects.filter(is_active=True)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        doctor = cleaned_data.get('doctor')
+        specialty = cleaned_data.get('specialty')
+        date = cleaned_data.get('date')
+        time = cleaned_data.get('time')
+        patient = self.user
+
+        if doctor and date and time:
+            if Appointment.objects.filter(doctor=doctor, date=date, time=time).exists():
+                raise forms.ValidationError("This doctor already has an appointment at this date and time.")
+
+
+        if date and time:
+            dt = datetime.datetime.combine(date, time)
+            if timezone.is_naive(dt):
+                dt = timezone.make_aware(dt, timezone.get_current_timezone())
+            if dt < timezone.now():
+                raise forms.ValidationError("Cannot schedule for a past date and time.")
+
+        if time:
+            if not (WORK_START_HOUR <= time.hour < WORK_END_HOUR):
+                raise forms.ValidationError(f"Appointments can only be scheduled between {WORK_START_HOUR}:00 and {WORK_END_HOUR}:00.")
+
+
+        if date:
+            if date.weekday() in DISABLED_WEEKDAYS:
+                raise forms.ValidationError("Appointments cannot be scheduled on weekends.")
+            if date.strftime("%Y-%m-%d") in HOLIDAYS:
+                raise forms.ValidationError("Appointments cannot be scheduled on holidays.")
+
+        if patient and date:
+            max_per_day = 2
+            count = Appointment.objects.filter(patient=patient, date=date).count()
+            if count >= max_per_day:
+                raise forms.ValidationError("You have reached the limit of appointments for this day.")
+
+        max_cancellations = 2
+        days_window = 30
+        recent_cancels = Appointment.objects.filter(
+            patient=patient,
+            status='cancelled',
+            date__gte=timezone.now().date() - datetime.timedelta(days=days_window)
+        ).count()
+        if recent_cancels >= max_cancellations:
+            raise forms.ValidationError(
+                f"You have reached the limit of {max_cancellations} cancellations in the last {days_window} days."
+            )
+
+        if doctor and date and time:
+            exists = Appointment.objects.filter(
+                doctor=doctor,
+                patient=patient,
+                date=date,
+                time=time
+            ).exclude(status='cancelled').exists()
+            if exists:
+                raise forms.ValidationError(
+                    "You already have an appointment with this doctor at this date and time."
+                )
+
+        if doctor and not doctor.is_active:
+            raise forms.ValidationError("This doctor is not currently available.")
+
+        if doctor and specialty:
+            try:
+                has_specialty = doctor.doctorprofile.specialties.filter(pk=specialty.pk).exists()
+            except AttributeError:
+                has_specialty = False
+            if not has_specialty:
+                raise forms.ValidationError("Selected doctor does not have this specialty.")
+
+        required_fields = ['doctor', 'specialty', 'date', 'time']
+        for field in required_fields:
+            if not cleaned_data.get(field):
+                self.add_error(field, "This field is required.")
+
+
+        return cleaned_data

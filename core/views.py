@@ -2,9 +2,11 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
-from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm
+from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
+    AppointmentForm
 from .models import User
 
 
@@ -184,3 +186,36 @@ def delete_account(request):
         form = ConfirmPasswordForm()
 
     return render(request, 'account_delete_confirm.html', {'form': form})
+
+
+@login_required
+def schedule_appointment(request):
+    if not request.user.is_patient():
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        form = AppointmentForm(request.POST, user=request.user)
+        if form.is_valid():
+            appointment = form.save(commit=False)
+            appointment.patient = request.user
+            appointment.save()
+            return redirect('appointment_list')
+    else:
+        form = AppointmentForm(user=request.user)
+
+    return render(request, 'schedule.html', {'form': form})
+
+
+@login_required
+def doctors_by_specialty(request):
+    specialty_id = request.GET.get('specialty')
+    doctors = User.objects.filter(
+        role=User.DOCTOR,
+        is_active=True,
+        doctorprofile__specialties__id=specialty_id
+    ).distinct()
+    data = [
+        {'id': doctor.id, 'name': doctor.get_full_name() or doctor.username}
+        for doctor in doctors
+    ]
+    return JsonResponse({'doctors': data})
