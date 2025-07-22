@@ -20,20 +20,23 @@ This project is designed to be extensible, well-tested, and easily adaptable to 
 - Password reset, password change and delete account (with password confirmation)
 - Admin dashboard: user list, filtering, edit, activate/deactivate, pagination
 
-### Specialties CRUD
-- Admin management of medical specialties (create, edit, delete)
+### Specialties Management
+- Admin CRUD of medical specialties (create, edit, delete)
+- Doctor profile linked to specialties (many-to-many)
+- Only active specialties available for booking
 
 ### Medical Appointment Scheduling
 - Patients book appointments by selecting doctor, specialty, date & time
-- Conflict prevention (no double bookings for same doctor & time)
-- Reverse search: Find available doctors by specialty and date
+- Smart conflict prevention (no double bookings for same doctor & time)
+- Dynamic doctor selection by specialty (AJAX)
+- 10+ professional validations: conflicts, working hours, weekends, holidays, limits per patient, per day, doctor availability, etc.
 - Reason for booking: patient can describe symptoms/motive at scheduling
 
-### AI-powered Triage
+### AI-powered Triage (upcoming)
 - Endpoint to receive symptoms and suggest the ideal medical specialty via AI
 
 ### Consultation History
-- View past, upcoming and cancelled appointments (with filters)
+- Patients and doctors can view past, upcoming and cancelled appointments (with filters)
 - CSV export for patients/doctors
 
 ### Smart Cancellation/Rebooking Rules
@@ -42,7 +45,7 @@ This project is designed to be extensible, well-tested, and easily adaptable to 
 ### Notifications (Simulated)
 - Appointment reminders via simulated notifications
 
-### Feedback/Review
+### Feedback/Review (upcoming)
 - Patient rates their appointment (1-5 stars + comments)
 
 ### Automated Testing & Documentation
@@ -61,7 +64,11 @@ This project is designed to be extensible, well-tested, and easily adaptable to 
 - Profile management and role-based access
 - Password reset, change, and delete account (LGPD-ready)
 - Admin dashboard for user management (list, filter, activate/deactivate, edit)
+- CRUD of specialties (admin only)
+- Specialty-doctor relationship (many-to-many)
 - Responsive interface with Tailwind CSS (via CDN)
+- Medical appointment scheduling with dynamic doctor filtering by specialty (AJAX)
+- 10 essential validations for safe, real-world booking (conflict, working hours, weekends, holidays, limits per patient, doctor availability, specialty consistency, etc.)
 - Secure, DRY and extensible backend
 
 ---
@@ -128,8 +135,10 @@ Access at [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ## 📅 Project Status
 
-- **User management** module: Feature-complete.
-- **Next:** Specialties CRUD, scheduling logic, AI endpoint, history and feedback, deploy & API.
+- **User management:** Complete
+- **Specialties management:** Complete
+- **Appointment scheduling:** Core booking, dynamic filtering, and all key validations implemented
+- **Next:** History, cancellation rules, AI endpoint, feedback, deployment & API polish
 
 ---
 
