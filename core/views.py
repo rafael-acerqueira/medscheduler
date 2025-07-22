@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
@@ -203,3 +204,18 @@ def schedule_appointment(request):
         form = AppointmentForm(user=request.user)
 
     return render(request, 'schedule.html', {'form': form})
+
+
+@login_required
+def doctors_by_specialty(request):
+    specialty_id = request.GET.get('specialty')
+    doctors = User.objects.filter(
+        role=User.DOCTOR,
+        is_active=True,
+        doctorprofile__specialties__id=specialty_id
+    ).distinct()
+    data = [
+        {'id': doctor.id, 'name': doctor.get_full_name() or doctor.username}
+        for doctor in doctors
+    ]
+    return JsonResponse({'doctors': data})

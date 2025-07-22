@@ -255,9 +255,31 @@ class AppointmentForm(forms.ModelForm):
         model = Appointment
         fields = ['specialty', 'doctor', 'date', 'time', 'reason']
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-            'time': forms.TimeInput(attrs={'type': 'time'}),
-            'reason': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Describe the reason for your appointment'}),
+            'specialty': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select a specialty'
+            }),
+            'doctor': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select a doctor'
+            }),
+            'date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select a date',
+                'autocomplete': 'off',
+            }),
+            'time': forms.TimeInput(attrs={
+                'type': 'time',
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select a time',
+                'autocomplete': 'off',
+            }),
+            'reason': forms.Textarea(attrs={
+                'rows': 3,
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Describe the reason for your appointment',
+            }),
         }
 
     def __init__(self, *args, **kwargs):
