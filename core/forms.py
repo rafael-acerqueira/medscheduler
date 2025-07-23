@@ -381,3 +381,22 @@ class AppointmentForm(forms.ModelForm):
 
 
         return cleaned_data
+
+class AvailabilitySearchForm(forms.Form):
+    specialty = forms.ModelChoiceField(
+        queryset=Specialty.objects.filter(is_active=True),
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+            'placeholder': 'Select a specialty'
+        }),
+        label="Specialty"
+    )
+    date = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+            'placeholder': 'Select a date',
+            'autocomplete': 'off'
+        }),
+        label="Date"
+    )
