@@ -4,12 +4,28 @@
 <div class="min-h-screen flex items-center justify-center bg-gray-100">
   <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8">
     <h2 class="text-3xl font-bold text-blue-600 text-center mb-6">Find Available Doctors</h2>
+    {% if form.non_field_errors %}
+      <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 rounded mb-4 text-sm">
+        <ul>
+          {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
     <form method="post" class="space-y-4 mb-8">
       {% csrf_token %}
       {% for field in form %}
         <div>
           {{ field.label_tag }}{% if field.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
           {{ field }}
+          {% if field.errors %}
+            <div class="text-xs text-red-600 mt-1">
+              {% for error in field.errors %}
+                {{ error }}<br>
+              {% endfor %}
+            </div>
+          {% endif %}
           {% if field.help_text %}
             <p class="text-xs text-gray-500 mt-1">{{ field.help_text|safe }}</p>
           {% endif %}
