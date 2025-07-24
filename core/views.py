@@ -6,8 +6,10 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
-    AppointmentForm
-from .models import User
+    AppointmentForm, AvailabilitySearchForm
+from .models import User, Appointment, DoctorProfile
+
+import datetime
 
 
 def register(request):
@@ -200,6 +202,14 @@ def schedule_appointment(request):
             appointment.patient = request.user
             appointment.save()
             return redirect('appointment_list')
+
+    elif request.method == 'GET':
+        initial = {}
+        initial['doctor'] = request.GET.get('doctor')
+        initial['specialty'] = request.GET.get('specialty')
+        initial['date'] = request.GET.get('date')
+        initial['time'] = request.GET.get('time')
+        form = AppointmentForm(initial=initial, user=request.user)
     else:
         form = AppointmentForm(user=request.user)
 
@@ -219,3 +229,42 @@ def doctors_by_specialty(request):
         for doctor in doctors
     ]
     return JsonResponse({'doctors': data})
+
+
+@login_required
+def find_available_doctors(request):
+    doctors = slots = None
+    if request.method == 'POST':
+        form = AvailabilitySearchForm(request.POST)
+        if form.is_valid():
+            specialty = form.cleaned_data['specialty']
+            date = form.cleaned_data['date']
+
+
+            doctors = DoctorProfile.objects.filter(
+                specialties=specialty,
+                user__is_active=True,
+                user__role='doctor'
+            ).select_related('user')
+
+
+            slots = {}
+            for doctor in doctors:
+                taken_times = set(
+                    Appointment.objects.filter(
+                        doctor=doctor.user,
+                        date=date
+                    ).values_list('time', flat=True)
+                )
+                slots_per_day = [datetime.time(h, m) for h in range(8, 18) for m in (0, 30)]
+                free = [t for t in slots_per_day if t not in taken_times]
+                if free:
+                    slots[doctor] = free
+
+    else:
+        form = AvailabilitySearchForm()
+
+    return render(request, 'find_available.html', {
+        'form': form,
+        'slots': slots,
+    })

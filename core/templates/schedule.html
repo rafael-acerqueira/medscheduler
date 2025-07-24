@@ -25,7 +25,29 @@
             <select name="doctor" id="id_doctor" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600">
               <option value="">Select a doctor</option>
               {% for doctor in field.field.queryset %}
-                <option value="{{ doctor.id }}">{{ doctor.get_full_name|default:doctor.username }}</option>
+                <option value="{{ doctor.id }}" {% if field.value|stringformat:"s" == doctor.id|stringformat:"s" %}selected{% endif %}>{{ doctor.get_full_name|default:doctor.username }}</option>
+              {% endfor %}
+            </select>
+            {% if field.errors %}
+              <div class="text-xs text-red-600 mt-1">
+                {% for error in field.errors %}
+                  {{ error }}<br>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if field.help_text %}
+              <p class="text-xs text-gray-500 mt-1">{{ field.help_text|safe }}</p>
+            {% endif %}
+          </div>
+        {% elif field.name == "specialty" %}
+          <div>
+            {{ field.label_tag }}{% if field.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
+            <select name="specialty" id="id_specialty" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600">
+              <option value="">Select a specialty</option>
+              {% for specialty in field.field.queryset %}
+                <option value="{{ specialty.id }}" {% if field.value|stringformat:"s" == specialty.id|stringformat:"s" %}selected{% endif %}>
+                  {{ specialty.name }}
+                </option>
               {% endfor %}
             </select>
             {% if field.errors %}

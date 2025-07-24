@@ -1,4 +1,5 @@
 import datetime
+from datetime import date, timedelta
 from django.utils import timezone
 
 from django import forms
@@ -381,3 +382,39 @@ class AppointmentForm(forms.ModelForm):
 
 
         return cleaned_data
+
+class AvailabilitySearchForm(forms.Form):
+    specialty = forms.ModelChoiceField(
+        queryset=Specialty.objects.filter(is_active=True),
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+            'placeholder': 'Select a specialty'
+        }),
+        label="Specialty"
+    )
+    date = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+            'placeholder': 'Select a date',
+            'autocomplete': 'off'
+        }),
+        label="Date"
+    )
+
+    def clean_date(self):
+        DISABLED_WEEKDAYS = (5, 6)
+        MAX_DAYS_AHEAD = 60
+        HOLIDAYS = ['2024-12-25', '2024-01-01']
+
+        d = self.cleaned_data['date']
+        today = date.today()
+        if d < today:
+            raise forms.ValidationError("Date cannot be in the past.")
+        if d.weekday() in DISABLED_WEEKDAYS:
+            raise forms.ValidationError("Appointments cannot be scheduled on weekends.")
+        if (d - today).days > MAX_DAYS_AHEAD:
+            raise forms.ValidationError(f"Please choose a date within the next {MAX_DAYS_AHEAD} days.")
+        if d.strftime("%Y-%m-%d") in HOLIDAYS:
+            raise forms.ValidationError("Appointments cannot be scheduled on holidays.")
+        return d
