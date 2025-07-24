@@ -268,3 +268,48 @@ def find_available_doctors(request):
         'form': form,
         'slots': slots,
     })
+
+
+@login_required
+def appointment_list(request):
+
+    appointments = Appointment.objects.filter(patient=request.user)
+
+    status = request.GET.get('status')
+    if status:
+        appointments = appointments.filter(status=status)
+
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    if start_date:
+        appointments = appointments.filter(date__gte=start_date)
+    if end_date:
+        appointments = appointments.filter(date__lte=end_date)
+
+    order_by = request.GET.get('order_by', 'date')
+    order_dir = request.GET.get('order_dir', 'asc')
+    if order_dir == 'desc':
+        ordering = '-' + order_by
+    else:
+        ordering = order_by
+
+    appointments = appointments.order_by(ordering)
+
+    columns = [
+        ('date', 'Date'),
+        ('time', 'Time'),
+        ('doctor', 'Doctor'),
+        ('specialty', 'Specialty'),
+        ('status', 'Status'),
+        ('actions', 'Actions'),
+    ]
+
+    return render(request, 'patient_list.html', {
+        'appointments': appointments,
+        'status': status,
+        'start_date': start_date,
+        'end_date': end_date,
+        'columns': columns,
+        'order_by': order_by,
+        'order_dir': order_dir,
+    })
