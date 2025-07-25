@@ -113,6 +113,9 @@
                         <button type="submit" class="text-red-600 hover:underline ml-2" onclick="return confirm('Are you sure you want to cancel this appointment?');">Cancel</button>
                       </form>
                     {% endif %}
+                    {% if a.status == "confirmed" and a.can_be_rescheduled %}
+                      <a href="{% url 'appointment_reschedule' a.id %}" class="text-yellow-600 hover:underline ml-2">Reschedule</a>
+                    {% endif %}
                   </td>
                 </tr>
               {% endfor %}

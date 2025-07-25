@@ -418,3 +418,65 @@ class AvailabilitySearchForm(forms.Form):
         if d.strftime("%Y-%m-%d") in HOLIDAYS:
             raise forms.ValidationError("Appointments cannot be scheduled on holidays.")
         return d
+
+class AppointmentRescheduleForm(forms.ModelForm):
+    class Meta:
+        model = Appointment
+        fields = ['date', 'time']
+        widgets = {
+            'date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select a date',
+                'autocomplete': 'off',
+            }),
+            'time': forms.TimeInput(attrs={
+                'type': 'time',
+                'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
+                'placeholder': 'Select a time',
+                'autocomplete': 'off',
+            }),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        date = cleaned_data.get('date')
+        time = cleaned_data.get('time')
+
+        doctor = self.instance.doctor
+        patient = self.instance.patient
+
+        if doctor and date and time:
+            exists = Appointment.objects.filter(
+                doctor=doctor,
+                date=date,
+                time=time
+            ).exclude(pk=self.instance.pk).exists()
+            if exists:
+                raise forms.ValidationError("This doctor already has an appointment at this date and time.")
+
+
+        if date and time:
+            dt = datetime.datetime.combine(date, time)
+            if timezone.is_naive(dt):
+                dt = timezone.make_aware(dt, timezone.get_current_timezone())
+            if dt < timezone.now():
+                raise forms.ValidationError("Cannot schedule for a past date and time.")
+
+
+        WORK_START_HOUR = 8
+        WORK_END_HOUR = 18
+        if time:
+            if not (WORK_START_HOUR <= time.hour < WORK_END_HOUR):
+                raise forms.ValidationError(
+                    f"Appointments can only be scheduled between {WORK_START_HOUR}:00 and {WORK_END_HOUR}:00."
+                )
+
+
+        DISABLED_WEEKDAYS = [5, 6]
+        if date:
+            if date.weekday() in DISABLED_WEEKDAYS:
+                raise forms.ValidationError("Appointments cannot be scheduled on weekends.")
+
+
+        return cleaned_data

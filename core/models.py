@@ -121,3 +121,7 @@ class Appointment(models.Model):
     @property
     def can_be_cancelled(self):
         return self.status == "confirmed" and (self.date > timezone.now().date() or (self.date == timezone.now().date() and self.time > timezone.now().time()))
+
+    @property
+    def can_be_rescheduled(self):
+        return self.status == "confirmed" and self.date > timezone.now().date()

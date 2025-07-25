@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 from django.utils import timezone
 from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
-    AppointmentForm, AvailabilitySearchForm
+    AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm
 from .models import User, Appointment, DoctorProfile
 
 import datetime
@@ -354,3 +354,26 @@ def appointment_cancel(request, pk):
 
 
     return render(request, "cancel_confirm.html", {"appointment": appointment})
+
+
+@login_required
+def appointment_reschedule(request, pk):
+    appointment = get_object_or_404(Appointment, pk=pk, patient=request.user)
+
+
+    if not appointment.can_be_rescheduled:
+        messages.error(request, "You cannot reschedule this appointment.")
+        return redirect('appointment_detail', pk=pk)
+
+    if request.method == "POST":
+        form = AppointmentRescheduleForm(request.POST, instance=appointment)
+        if form.is_valid():
+            form.save()
+            appointment.status = "confirmed"
+            appointment.save()
+            messages.success(request, "Appointment rescheduled successfully.")
+            return redirect('appointment_detail', pk=pk)
+    else:
+        form = AppointmentRescheduleForm(instance=appointment)
+
+    return render(request, "reschedule.html", {"form": form, "appointment": appointment})
