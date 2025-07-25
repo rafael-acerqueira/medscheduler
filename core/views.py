@@ -10,6 +10,7 @@ from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, 
 from .models import User, Appointment, DoctorProfile
 
 import datetime
+from datetime import date
 
 
 def register(request):
@@ -312,4 +313,14 @@ def appointment_list(request):
         'columns': columns,
         'order_by': order_by,
         'order_dir': order_dir,
+        'today': date.today()
+    })
+
+@login_required
+def appointment_detail(request, pk):
+
+    appointment = get_object_or_404(Appointment, pk=pk, patient=request.user)
+
+    return render(request, 'detail.html', {
+        'appointment': appointment
     })

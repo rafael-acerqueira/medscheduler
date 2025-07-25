@@ -83,7 +83,7 @@
             </thead>
             <tbody>
               {% for a in appointments %}
-                <tr class="border-b hover:bg-gray-50 transition">
+                <tr class="border-b hover:bg-gray-50 transition {% if a.date == today %}bg-yellow-50{% endif %}">
                   <td class="px-4 py-2">{{ a.date|date:"M d, Y" }}</td>
                   <td class="px-4 py-2">{{ a.time|time:"H:i" }}</td>
                   <td class="px-4 py-2">{{ a.doctor.get_full_name|default:a.doctor.username }}</td>
@@ -108,6 +108,7 @@
                     {% endif %}
                   </td>
                   <td class="px-4 py-2">
+                    <a href="{% url 'appointment_detail' a.id %}" class="text-blue-500 hover:underline mr-2">Details</a>
                   </td>
                 </tr>
               {% endfor %}
