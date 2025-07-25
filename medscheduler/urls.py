@@ -21,7 +21,7 @@ from django.urls import path
 from core.forms import LoginForm, CustomPasswordResetForm, CustomSetPasswordForm, CustomPasswordChangeForm
 from core.views import register, profile, edit_profile, user_list, edit_profile_admin, toggle_user_status, \
     delete_account, schedule_appointment, doctors_by_specialty, find_available_doctors, appointment_list, \
-    appointment_detail
+    appointment_detail, appointment_cancel
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -55,5 +55,6 @@ urlpatterns = [
     path('ajax/doctors_by_specialty/', doctors_by_specialty, name='doctors_by_specialty'),
     path('availability/', find_available_doctors, name='find_available_doctors'),
     path('my-appointments/', appointment_list, name='appointment_list'),
-    path('appointments/<int:pk>/', appointment_detail, name='appointment_detail')
+    path('appointments/<int:pk>/', appointment_detail, name='appointment_detail'),
+    path('appointments/<int:pk>/cancel/', appointment_cancel, name='appointment_cancel')
 ]

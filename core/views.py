@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
+from django.utils import timezone
 from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
     AppointmentForm, AvailabilitySearchForm
 from .models import User, Appointment, DoctorProfile
@@ -324,3 +325,32 @@ def appointment_detail(request, pk):
     return render(request, 'detail.html', {
         'appointment': appointment
     })
+
+
+@login_required
+def appointment_cancel(request, pk):
+    time_limit_to_cancel = 86400
+
+    appointment = get_object_or_404(Appointment, pk=pk, patient=request.user)
+
+    now = timezone.now()
+    dt_appointment = timezone.make_aware(
+        datetime.datetime.combine(appointment.date, appointment.time),
+        timezone.get_current_timezone()
+    )
+    can_cancel = (
+            appointment.status == "confirmed" and
+            (dt_appointment - now).total_seconds() > time_limit_to_cancel
+    )
+    if not can_cancel:
+        messages.error(request, "You can only cancel appointments at least 24 hours in advance.")
+        return redirect('appointment_detail', pk=pk)
+
+    if request.method == "POST":
+        appointment.status = "cancelled"
+        appointment.save()
+        messages.success(request, "Appointment cancelled successfully.")
+        return redirect('appointment_list')
+
+
+    return render(request, "cancel_confirm.html", {"appointment": appointment})

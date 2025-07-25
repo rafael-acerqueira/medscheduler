@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 class User(AbstractUser):
     ADMIN = 'admin'
@@ -86,7 +87,6 @@ class DoctorProfile(models.Model):
 
 class Appointment(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
         ('cancelled', 'Cancelled'),
         ('completed', 'Completed'),
@@ -107,7 +107,7 @@ class Appointment(models.Model):
     specialty = models.ForeignKey('Specialty', on_delete=models.PROTECT)
     date = models.DateField()
     time = models.TimeField()
-    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default='confirmed')
     reason = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -117,3 +117,7 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"{self.patient} with {self.doctor} on {self.date} at {self.time}"
+
+    @property
+    def can_be_cancelled(self):
+        return self.status == "confirmed" and (self.date > timezone.now().date() or (self.date == timezone.now().date() and self.time > timezone.now().time()))

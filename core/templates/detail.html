@@ -22,9 +22,7 @@
         <div>
           <dt class="font-semibold text-gray-600">Status:</dt>
           <dd class="ml-2">
-            {% if appointment.status == "pending" %}
-              <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-bold">Pending</span>
-            {% elif appointment.status == "scheduled" %}
+            {% if appointment.status == "confirmed" %}
               <span class="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">Upcoming</span>
             {% elif appointment.status == "completed" %}
               <span class="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Completed</span>
