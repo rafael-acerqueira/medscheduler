@@ -400,3 +400,79 @@ def export_appointments_csv(request):
             a.reason or ""
         ])
     return response
+
+
+@login_required
+def doctor_appointments(request):
+    if not request.user.is_doctor():
+        return redirect('dashboard')
+    appointments = Appointment.objects.filter(doctor=request.user).order_by('-date', '-time')
+
+    status = request.GET.get('status')
+    patient_name = request.GET.get('patient')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    if status:
+        appointments = appointments.filter(status=status)
+    if patient_name:
+  
+        search_parts = patient_name.strip().split()
+        q = Q()
+        for part in search_parts:
+            q &= (
+                    Q(patient__first_name__icontains=part) |
+                    Q(patient__last_name__icontains=part) |
+                    Q(patient__username__icontains=part) |
+                    Q(patient__email__icontains=part)
+            )
+        appointments = appointments.filter(q)
+    if start_date:
+        appointments = appointments.filter(date__gte=start_date)
+    if end_date:
+        appointments = appointments.filter(date__lte=end_date)
+
+    paginator = Paginator(appointments, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'doctor/appointments.html', {
+        'page_obj': page_obj,
+        'status': status,
+        'patient_name': patient_name,
+        'start_date': start_date,
+        'end_date': end_date,
+    })
+
+@login_required
+def doctor_appointment_detail(request, pk):
+    appointment = get_object_or_404(Appointment, pk=pk, doctor=request.user)
+    if request.method == "POST" and 'complete' in request.POST:
+        if appointment.status == "confirmed":
+            appointment.status = "completed"
+            appointment.save()
+            messages.success(request, "Appointment marked as completed.")
+            return redirect('doctor_appointments')
+    return render(request, "doctor/appointment_detail.html", {'appointment': appointment})
+
+
+@login_required
+def export_doctor_appointments_csv(request):
+    if not request.user.is_doctor():
+        return redirect('dashboard')
+    appointments = Appointment.objects.filter(doctor=request.user).order_by('-date', '-time')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="my_agenda.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Time', 'Patient', 'Status', 'Reason'])
+    for a in appointments:
+        writer.writerow([
+            a.date.strftime('%Y-%m-%d'),
+            a.time.strftime('%H:%M'),
+            a.patient.get_full_name() if hasattr(a.patient, 'get_full_name') else str(a.patient),
+            a.get_status_display(),
+            a.reason or ""
+        ])
+    return response

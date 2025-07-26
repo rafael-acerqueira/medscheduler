@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}My Appointments{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 py-10">
+  <div class="w-full max-w-4xl">
+    <div class="flex items-center justify-between mb-8">
+      <h2 class="text-3xl font-bold text-blue-600">My Appointments</h2>
+      <a href="{% url 'export_doctor_appointments_csv' %}"
+         class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow transition">
+        Export CSV
+      </a>
+    </div>
+
+    <form method="get" class="mb-6 flex flex-wrap gap-4 items-center bg-white p-4 rounded-xl shadow">
+      <input type="text" name="patient" value="{{ patient_name }}" placeholder="Search patient..."
+             class="w-48 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition">
+      <select name="status"
+              class="w-40 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition">
+        <option value="">All Status</option>
+        <option value="confirmed" {% if status == 'confirmed' %}selected{% endif %}>Upcoming</option>
+        <option value="completed" {% if status == 'completed' %}selected{% endif %}>Completed</option>
+        <option value="cancelled" {% if status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+      </select>
+      <input type="date" name="start_date" value="{{ start_date }}"
+             class="w-40 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition">
+      <input type="date" name="end_date" value="{{ end_date }}"
+             class="w-40 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 transition">
+      <button type="submit"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow transition">
+        Filter
+      </button>
+      <a href="{% url 'doctor_appointments' %}"
+       class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition ml-2">
+        Clear Filters
+    </a>
+    </form>
+
+    <div class="bg-white rounded-2xl shadow-lg">
+      <table class="min-w-full rounded-xl overflow-hidden">
+        <thead>
+          <tr class="bg-blue-50 text-left">
+            <th class="px-4 py-3">Date</th>
+            <th class="px-4 py-3">Time</th>
+            <th class="px-4 py-3">Patient</th>
+            <th class="px-4 py-3">Status</th>
+            <th class="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in page_obj %}
+          <tr class="border-b hover:bg-gray-50 transition">
+            <td class="px-4 py-2">{{ a.date|date:"d/m/Y" }}</td>
+            <td class="px-4 py-2">{{ a.time|time:"H:i" }}</td>
+            <td class="px-4 py-2">{{ a.patient.get_full_name|default:a.patient.username }}</td>
+            <td class="px-4 py-2">
+              {% if a.status == "confirmed" %}
+                <span class="inline-flex px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">Upcoming</span>
+              {% elif a.status == "completed" %}
+                <span class="inline-flex px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">Completed</span>
+              {% elif a.status == "cancelled" %}
+                <span class="inline-flex px-2 py-1 bg-gray-100 text-gray-400 rounded text-xs font-semibold">Cancelled</span>
+              {% else %}
+                <span class="inline-flex px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-semibold">{{ a.status|title }}</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-2">
+              <a href="{% url 'doctor_appointment_detail' a.id %}"
+                 class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-1.5 rounded-lg transition text-xs">
+                Details
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-gray-400 py-6">No appointments found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-8 flex justify-center items-center gap-2">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}"
+           class="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Previous</a>
+      {% endif %}
+      <span class="px-4 py-2 text-gray-700">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}"
+           class="px-3 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">Next</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
