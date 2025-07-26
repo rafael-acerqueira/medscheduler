@@ -8,10 +8,6 @@
   <div class="w-full max-w-4xl">
     <div class="flex justify-between items-center mb-8">
       <h2 class="text-3xl font-bold text-blue-600 text-center flex-1">My Appointments</h2>
-      <a href="{% url 'find_available_doctors' %}"
-         class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow transition">
-        + New Appointment
-      </a>
     </div>
 
     <form method="get" class="flex flex-wrap gap-4 mb-8 justify-center">
@@ -43,6 +39,17 @@
     <div class="bg-white rounded-2xl shadow-lg p-6">
       {% if appointments %}
         <div class="overflow-x-auto">
+          <h2 class="text-3xl font-bold text-blue-600 text-center flex-1">My Appointments</h2>
+          <div class="flex justify-end items-center mt-8 mb-2">
+            <a href="{% url 'export_appointments_csv' %}"
+               class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow transition ml-4">
+              Export as CSV
+            </a>
+            <a href="{% url 'find_available_doctors' %}"
+               class="ml-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow transition">
+              + New Appointment
+            </a>
+          </div>
           <table class="w-full table-auto">
             <thead>
                 <tr class="text-left border-b bg-blue-50">
@@ -106,16 +113,28 @@
                     {% endif %}
                   </td>
                   <td class="px-4 py-2">
-                    <a href="{% url 'appointment_detail' a.id %}" class="text-blue-500 hover:underline mr-2">Details</a>
-                    {% if a.status == "confirmed" and a.can_be_cancelled %}
-                      <form method="post" action="{% url 'appointment_cancel' a.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="text-red-600 hover:underline ml-2" onclick="return confirm('Are you sure you want to cancel this appointment?');">Cancel</button>
-                      </form>
-                    {% endif %}
-                    {% if a.status == "confirmed" and a.can_be_rescheduled %}
-                      <a href="{% url 'appointment_reschedule' a.id %}" class="text-yellow-600 hover:underline ml-2">Reschedule</a>
-                    {% endif %}
+                    <div class="flex flex-wrap gap-2">
+                      <a href="{% url 'appointment_detail' a.id %}"
+                         class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-1.5 rounded transition text-xs">
+                        Details
+                      </a>
+                      {% if a.status == "confirmed" and a.can_be_rescheduled %}
+                        <a href="{% url 'appointment_reschedule' a.id %}"
+                           class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-1.5 rounded transition text-xs">
+                          Reschedule
+                        </a>
+                      {% endif %}
+                      {% if a.status == "confirmed" and a.can_be_cancelled %}
+                        <form method="post" action="{% url 'appointment_cancel' a.id %}" class="inline">
+                          {% csrf_token %}
+                          <button type="submit"
+                                  class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-1.5 rounded transition text-xs"
+                                  onclick="return confirm('Are you sure you want to cancel this appointment?');">
+                            Cancel
+                          </button>
+                        </form>
+                      {% endif %}
+                    </div>
                   </td>
                 </tr>
               {% endfor %}

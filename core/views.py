@@ -1,8 +1,10 @@
+import csv
+
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 from django.utils import timezone
@@ -377,3 +379,24 @@ def appointment_reschedule(request, pk):
         form = AppointmentRescheduleForm(instance=appointment)
 
     return render(request, "reschedule.html", {"form": form, "appointment": appointment})
+
+@login_required
+def export_appointments_csv(request):
+    appointments = Appointment.objects.filter(patient=request.user).order_by('-date', '-time')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="my_appointments.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Time', 'Doctor', 'Specialty', 'Status', 'Reason'])
+
+    for a in appointments:
+        writer.writerow([
+            a.date.strftime('%Y-%m-%d'),
+            a.time.strftime('%H:%M'),
+            a.doctor.get_full_name() if hasattr(a.doctor, 'get_full_name') else str(a.doctor),
+            ", ".join(s.name for s in a.doctor.doctorprofile.specialties.all()) if hasattr(a.doctor, "doctorprofile") else "",
+            a.get_status_display(),
+            a.reason or ""
+        ])
+    return response
