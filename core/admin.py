@@ -39,6 +39,16 @@ class AppointmentAdmin(admin.ModelAdmin):
 
     export_appointments_csv.short_description = "Export selected appointments to CSV"
 
+    def mark_as_cancelled(modeladmin, request, queryset):
+        queryset.update(status='cancelled')
+
+    mark_as_cancelled.short_description = "Mark selected as Cancelled"
+
+    def mark_as_completed(modeladmin, request, queryset):
+        queryset.update(status='completed')
+
+    mark_as_completed.short_description = "Mark selected as Completed"
+
     list_filter = ['doctor', 'specialty', 'status', 'date']
     search_fields = [
         'patient__username', 'patient__first_name', 'patient__last_name', 'patient__email',
@@ -47,4 +57,4 @@ class AppointmentAdmin(admin.ModelAdmin):
     ]
     ordering = ['-date', 'time']
     list_display = ['patient', 'doctor', 'specialty', 'date', 'time', 'status']
-    actions = [export_appointments_csv]
+    actions = [export_appointments_csv, mark_as_completed, mark_as_cancelled]
