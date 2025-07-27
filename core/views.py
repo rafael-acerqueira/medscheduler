@@ -1,15 +1,19 @@
+import csv
+
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
+from django.utils import timezone
 from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
-    AppointmentForm, AvailabilitySearchForm
+    AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm
 from .models import User, Appointment, DoctorProfile
 
 import datetime
+from datetime import date
 
 
 def register(request):
@@ -268,3 +272,207 @@ def find_available_doctors(request):
         'form': form,
         'slots': slots,
     })
+
+
+@login_required
+def appointment_list(request):
+
+    appointments = Appointment.objects.filter(patient=request.user)
+
+    status = request.GET.get('status')
+    if status:
+        appointments = appointments.filter(status=status)
+
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    if start_date:
+        appointments = appointments.filter(date__gte=start_date)
+    if end_date:
+        appointments = appointments.filter(date__lte=end_date)
+
+    order_by = request.GET.get('order_by', 'date')
+    order_dir = request.GET.get('order_dir', 'asc')
+    if order_dir == 'desc':
+        ordering = '-' + order_by
+    else:
+        ordering = order_by
+
+    appointments = appointments.order_by(ordering)
+
+    columns = [
+        ('date', 'Date'),
+        ('time', 'Time'),
+        ('doctor', 'Doctor'),
+        ('specialty', 'Specialty'),
+        ('status', 'Status'),
+        ('actions', 'Actions'),
+    ]
+
+    return render(request, 'patient_list.html', {
+        'appointments': appointments,
+        'status': status,
+        'start_date': start_date,
+        'end_date': end_date,
+        'columns': columns,
+        'order_by': order_by,
+        'order_dir': order_dir,
+        'today': date.today()
+    })
+
+@login_required
+def appointment_detail(request, pk):
+
+    appointment = get_object_or_404(Appointment, pk=pk, patient=request.user)
+
+    return render(request, 'detail.html', {
+        'appointment': appointment
+    })
+
+
+@login_required
+def appointment_cancel(request, pk):
+    time_limit_to_cancel = 86400
+
+    appointment = get_object_or_404(Appointment, pk=pk, patient=request.user)
+
+    now = timezone.now()
+    dt_appointment = timezone.make_aware(
+        datetime.datetime.combine(appointment.date, appointment.time),
+        timezone.get_current_timezone()
+    )
+    can_cancel = (
+            appointment.status == "confirmed" and
+            (dt_appointment - now).total_seconds() > time_limit_to_cancel
+    )
+    if not can_cancel:
+        messages.error(request, "You can only cancel appointments at least 24 hours in advance.")
+        return redirect('appointment_detail', pk=pk)
+
+    if request.method == "POST":
+        appointment.status = "cancelled"
+        appointment.save()
+        messages.success(request, "Appointment cancelled successfully.")
+        return redirect('appointment_list')
+
+
+    return render(request, "cancel_confirm.html", {"appointment": appointment})
+
+
+@login_required
+def appointment_reschedule(request, pk):
+    appointment = get_object_or_404(Appointment, pk=pk, patient=request.user)
+
+
+    if not appointment.can_be_rescheduled:
+        messages.error(request, "You cannot reschedule this appointment.")
+        return redirect('appointment_detail', pk=pk)
+
+    if request.method == "POST":
+        form = AppointmentRescheduleForm(request.POST, instance=appointment)
+        if form.is_valid():
+            form.save()
+            appointment.status = "confirmed"
+            appointment.save()
+            messages.success(request, "Appointment rescheduled successfully.")
+            return redirect('appointment_detail', pk=pk)
+    else:
+        form = AppointmentRescheduleForm(instance=appointment)
+
+    return render(request, "reschedule.html", {"form": form, "appointment": appointment})
+
+@login_required
+def export_appointments_csv(request):
+    appointments = Appointment.objects.filter(patient=request.user).order_by('-date', '-time')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="my_appointments.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Time', 'Doctor', 'Specialty', 'Status', 'Reason'])
+
+    for a in appointments:
+        writer.writerow([
+            a.date.strftime('%Y-%m-%d'),
+            a.time.strftime('%H:%M'),
+            a.doctor.get_full_name() if hasattr(a.doctor, 'get_full_name') else str(a.doctor),
+            ", ".join(s.name for s in a.doctor.doctorprofile.specialties.all()) if hasattr(a.doctor, "doctorprofile") else "",
+            a.get_status_display(),
+            a.reason or ""
+        ])
+    return response
+
+
+@login_required
+def doctor_appointments(request):
+    if not request.user.is_doctor():
+        return redirect('dashboard')
+    appointments = Appointment.objects.filter(doctor=request.user).order_by('-date', '-time')
+
+    status = request.GET.get('status')
+    patient_name = request.GET.get('patient')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    if status:
+        appointments = appointments.filter(status=status)
+    if patient_name:
+  
+        search_parts = patient_name.strip().split()
+        q = Q()
+        for part in search_parts:
+            q &= (
+                    Q(patient__first_name__icontains=part) |
+                    Q(patient__last_name__icontains=part) |
+                    Q(patient__username__icontains=part) |
+                    Q(patient__email__icontains=part)
+            )
+        appointments = appointments.filter(q)
+    if start_date:
+        appointments = appointments.filter(date__gte=start_date)
+    if end_date:
+        appointments = appointments.filter(date__lte=end_date)
+
+    paginator = Paginator(appointments, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'doctor/appointments.html', {
+        'page_obj': page_obj,
+        'status': status,
+        'patient_name': patient_name,
+        'start_date': start_date,
+        'end_date': end_date,
+    })
+
+@login_required
+def doctor_appointment_detail(request, pk):
+    appointment = get_object_or_404(Appointment, pk=pk, doctor=request.user)
+    if request.method == "POST" and 'complete' in request.POST:
+        if appointment.status == "confirmed":
+            appointment.status = "completed"
+            appointment.save()
+            messages.success(request, "Appointment marked as completed.")
+            return redirect('doctor_appointments')
+    return render(request, "doctor/appointment_detail.html", {'appointment': appointment})
+
+
+@login_required
+def export_doctor_appointments_csv(request):
+    if not request.user.is_doctor():
+        return redirect('dashboard')
+    appointments = Appointment.objects.filter(doctor=request.user).order_by('-date', '-time')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="my_agenda.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Time', 'Patient', 'Status', 'Reason'])
+    for a in appointments:
+        writer.writerow([
+            a.date.strftime('%Y-%m-%d'),
+            a.time.strftime('%H:%M'),
+            a.patient.get_full_name() if hasattr(a.patient, 'get_full_name') else str(a.patient),
+            a.get_status_display(),
+            a.reason or ""
+        ])
+    return response

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Appointment Details{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 py-10">
+  <div class="w-full max-w-xl">
+    <div class="bg-white rounded-2xl shadow-lg p-8">
+      <h2 class="text-3xl font-bold text-blue-700 mb-6 text-center">Appointment Details</h2>
+      <dl class="space-y-6">
+        <div>
+          <dt class="font-semibold text-gray-600">Date & Time:</dt>
+          <dd class="ml-2 text-gray-900">{{ appointment.date|date:"M d, Y" }} at {{ appointment.time|time:"H:i" }}</dd>
+        </div>
+        <div>
+          <dt class="font-semibold text-gray-600">Doctor:</dt>
+          <dd class="ml-2 text-gray-900">{{ appointment.doctor.get_full_name|default:appointment.doctor.username }}</dd>
+        </div>
+        <div>
+          <dt class="font-semibold text-gray-600">Specialty:</dt>
+          <dd class="ml-2 text-gray-900">{{ appointment.specialty.name }}</dd>
+        </div>
+        <div>
+          <dt class="font-semibold text-gray-600">Status:</dt>
+          <dd class="ml-2">
+            {% if appointment.status == "confirmed" %}
+              <span class="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">Upcoming</span>
+            {% elif appointment.status == "completed" %}
+              <span class="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Completed</span>
+            {% elif appointment.status == "cancelled" %}
+              <span class="inline-block bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-bold">Cancelled</span>
+            {% else %}
+              <span class="inline-block bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-xs">{{ appointment.status }}</span>
+            {% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="font-semibold text-gray-600">Reason:</dt>
+          <dd class="ml-2 text-gray-900">{{ appointment.reason|default:"-" }}</dd>
+        </div>
+        <!-- Outros campos podem ser adicionados aqui -->
+      </dl>
+      <div class="mt-8 flex justify-center">
+        <a href="{% url 'appointment_list' %}" class="inline-block bg-blue-50 text-blue-700 font-semibold px-6 py-2 rounded-lg shadow hover:bg-blue-100 transition">
+          &larr; Back to list
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
