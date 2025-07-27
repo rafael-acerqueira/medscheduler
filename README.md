@@ -122,6 +122,9 @@ Access at [http://127.0.0.1:8000](http://127.0.0.1:8000)
 - Register as patient or doctor.
 - Admins manage users at `/users/` or via `/admin/`.
 - Password flows and delete account are available from login/profile.
+- Specialties managed only via admin.
+- Appointment history, filters, and CSV export for patients/doctors.
+- Bulk actions and export in admin.
 - More features coming soon (see Roadmap!).
 
 ---
@@ -129,7 +132,7 @@ Access at [http://127.0.0.1:8000](http://127.0.0.1:8000)
 ## 👤 Roles
 
 - **Admin:** manage users, specialties, appointments (full access)
-- **Doctor/Patient:** can update their own profile, book/see appointments, delete account
+- **Doctor/Patient:** can update their own profile, book/see appointments, delete account, export history
 
 ---
 
@@ -138,7 +141,8 @@ Access at [http://127.0.0.1:8000](http://127.0.0.1:8000)
 - **User management:** Complete
 - **Specialties management:** Complete
 - **Appointment scheduling:** Core booking, dynamic filtering, and all key validations implemented
-- **Next:** History, cancellation rules, AI endpoint, feedback, deployment & API polish
+- **Admin:** Complete (bulk actions, filters, export, dashboard)
+- **Next:** Feedback, notifications, AI triage, testing, deployment
 
 ---
 
