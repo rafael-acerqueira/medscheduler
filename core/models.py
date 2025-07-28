@@ -125,3 +125,17 @@ class Appointment(models.Model):
     @property
     def can_be_rescheduled(self):
         return self.status == "confirmed" and self.date > timezone.now().date()
+
+class AppointmentFeedback(models.Model):
+    appointment = models.OneToOneField('Appointment', on_delete=models.CASCADE, related_name='feedback')
+    rating = models.PositiveSmallIntegerField(choices=[(i, f"{i} Star{'s' if i > 1 else ''}") for i in range(1, 6)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Feedback'
+        verbose_name_plural = 'Feedbacks'
+
+    def __str__(self):
+        return f"{self.appointment} - {self.rating} star(s)"
