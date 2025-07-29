@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Avg
 from django.conf import settings
 from django.utils import timezone
 
@@ -83,7 +84,17 @@ class DoctorProfile(models.Model):
         return f"Doctor: {self.user.get_full_name()}"
 
 
+    def average_rating(self):
+        return AppointmentFeedback.objects.filter(
+            appointment__doctor=self.user,
+            appointment__status='completed'
+        ).aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0
 
+    def ratings_count(self):
+        return AppointmentFeedback.objects.filter(
+            appointment__doctor=self.user,
+            appointment__status='completed'
+        ).count()
 
 class Appointment(models.Model):
     STATUS_CHOICES = [
