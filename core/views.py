@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 from django.utils import timezone
 from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
-    AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm
+    AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm, AppointmentFeedbackForm
 from .models import User, Appointment, DoctorProfile
 
 import datetime
@@ -476,3 +476,21 @@ def export_doctor_appointments_csv(request):
             a.reason or ""
         ])
     return response
+
+@login_required
+def leave_feedback(request, appointment_id):
+    appointment = get_object_or_404(Appointment, id=appointment_id, patient=request.user)
+    if hasattr(appointment, 'feedback'):
+        return redirect('appointment_detail', pk=appointment.id)
+
+    if request.method == 'POST':
+        form = AppointmentFeedbackForm(request.POST)
+        if form.is_valid():
+            feedback = form.save(commit=False)
+            feedback.appointment = appointment
+            feedback.save()
+            messages.success(request, 'Feedback sent!')
+            return redirect('appointment_detail', appointment_id=appointment.id)
+    else:
+        form = AppointmentFeedbackForm()
+    return render(request, 'leave_feedback.html', {'form': form, 'appointment': appointment})

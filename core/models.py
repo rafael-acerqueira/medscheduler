@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Avg
 from django.conf import settings
 from django.utils import timezone
 
@@ -83,7 +84,17 @@ class DoctorProfile(models.Model):
         return f"Doctor: {self.user.get_full_name()}"
 
 
+    def average_rating(self):
+        return AppointmentFeedback.objects.filter(
+            appointment__doctor=self.user,
+            appointment__status='completed'
+        ).aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0
 
+    def ratings_count(self):
+        return AppointmentFeedback.objects.filter(
+            appointment__doctor=self.user,
+            appointment__status='completed'
+        ).count()
 
 class Appointment(models.Model):
     STATUS_CHOICES = [
@@ -125,3 +136,17 @@ class Appointment(models.Model):
     @property
     def can_be_rescheduled(self):
         return self.status == "confirmed" and self.date > timezone.now().date()
+
+class AppointmentFeedback(models.Model):
+    appointment = models.OneToOneField('Appointment', on_delete=models.CASCADE, related_name='feedback')
+    rating = models.PositiveSmallIntegerField(choices=[(i, f"{i} Star{'s' if i > 1 else ''}") for i in range(1, 6)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Feedback'
+        verbose_name_plural = 'Feedbacks'
+
+    def __str__(self):
+        return f"{self.appointment} - {self.rating} star(s)"

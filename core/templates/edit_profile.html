@@ -68,6 +68,19 @@
           {% endfor %}
         </div>
       </div>
+      {% if user.is_doctor %}
+        <div class="mb-4 p-4 bg-yellow-50 rounded-xl shadow">
+          <h3 class="font-semibold mb-1">Your average rating</h3>
+          {% if profile_form.instance.ratings_count %}
+            <span class="text-2xl font-bold text-yellow-500">
+              {{ profile_form.instance.average_rating|floatformat:1 }}★
+            </span>
+            <span class="text-gray-600 ml-2">({{ profile_form.instance.ratings_count }} reviews)</span>
+          {% else %}
+            <span class="text-gray-500">Not rated yet</span>
+          {% endif %}
+        </div>
+      {% endif %}
       <button type="submit"
               class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition">
         Save

@@ -5,7 +5,7 @@ from django.utils import timezone
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, PasswordChangeForm
 
-from .models import User, PatientProfile, DoctorProfile, Specialty, Appointment
+from .models import User, PatientProfile, DoctorProfile, Specialty, Appointment, AppointmentFeedback
 
 ROLE_CHOICES = [user_role for user_role in User.ROLE_CHOICES if user_role[0] != User.ADMIN]
 
@@ -480,3 +480,14 @@ class AppointmentRescheduleForm(forms.ModelForm):
 
 
         return cleaned_data
+
+class AppointmentFeedbackForm(forms.ModelForm):
+    class Meta:
+        model = AppointmentFeedback
+        fields = ['rating', 'comment']
+        widgets = {
+            'comment': forms.Textarea(attrs={
+                'rows': 3,
+                'class': 'w-full px-3 py-2 border rounded',
+            }),
+        }
