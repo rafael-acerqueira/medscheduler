@@ -135,5 +135,6 @@ TAILWIND_APP_NAME = 'theme'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 LOGIN_REDIRECT_URL = '/profile/'
+LOGIN_URL = 'login'
 
 

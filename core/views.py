@@ -1,16 +1,18 @@
 import csv
 
 from django.contrib import messages
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
+from django.contrib.auth.views import LoginView
+from django.urls import reverse
 from django.utils import timezone
 from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
-    AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm, AppointmentFeedbackForm
-from .models import User, Appointment, DoctorProfile
+    AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm, AppointmentFeedbackForm, LoginForm
+from .models import User, Appointment, DoctorProfile, Specialty
 
 import datetime
 from datetime import date
@@ -494,3 +496,51 @@ def leave_feedback(request, appointment_id):
     else:
         form = AppointmentFeedbackForm()
     return render(request, 'leave_feedback.html', {'form': form, 'appointment': appointment})
+
+class CustomLoginView(LoginView):
+    template_name = 'login.html'
+    authentication_form = LoginForm
+
+    def get_success_url(self):
+        user = self.request.user
+        if not user.has_completed_profile():
+            return reverse('profile')
+        return reverse('dashboard')
+
+
+@login_required
+def dashboard(request):
+    user = request.user
+    today = timezone.now().date()
+
+    if user.is_patient():
+        upcoming = Appointment.objects.filter(patient=user, date__gte=today).order_by('date', 'time')[:5]
+        recent = Appointment.objects.filter(patient=user, date__lt=today).order_by('-date', '-time')[:5]
+        return render(request, 'dashboard_patient.html', {
+            'upcoming': upcoming,
+            'recent': recent,
+        })
+    elif user.is_doctor():
+        upcoming = Appointment.objects.filter(doctor=user, date__gte=today).order_by('date', 'time')[:5]
+        feedbacks = Appointment.objects.filter(doctor=user, status='completed', feedback__isnull=False).order_by('-date', '-time')[:5]
+        return render(request, 'dashboard_doctor.html', {
+            'upcoming': upcoming,
+            'feedbacks': feedbacks,
+        })
+    elif user.is_admin:
+        User = get_user_model()
+        metrics = {
+            'total_users': User.objects.count(),
+            'total_patients': User.objects.filter(role=User.PATIENT).count(),
+            'total_doctors': User.objects.filter(role=User.DOCTOR).count(),
+            'total_admins': User.objects.filter(role=User.ADMIN).count(),
+            'total_appointments': Appointment.objects.count(),
+            'appointments_today': Appointment.objects.filter(date=today).count(),
+            'appointments_confirmed': Appointment.objects.filter(status='confirmed').count(),
+            'appointments_cancelled': Appointment.objects.filter(status='cancelled').count(),
+            'total_specialties': Specialty.objects.count(),
+            'recent_users': User.objects.order_by('-date_joined')[:5],
+        }
+        return render(request, 'dashboard_admin.html', {'metrics': metrics})
+    else:
+        return redirect('login')
