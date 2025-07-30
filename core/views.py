@@ -7,9 +7,11 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
+from django.contrib.auth.views import LoginView
+from django.urls import reverse
 from django.utils import timezone
 from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
-    AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm, AppointmentFeedbackForm
+    AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm, AppointmentFeedbackForm, LoginForm
 from .models import User, Appointment, DoctorProfile
 
 import datetime
@@ -494,3 +496,16 @@ def leave_feedback(request, appointment_id):
     else:
         form = AppointmentFeedbackForm()
     return render(request, 'leave_feedback.html', {'form': form, 'appointment': appointment})
+
+class CustomLoginView(LoginView):
+    template_name = 'login.html'
+    authentication_form = LoginForm
+
+    def get_success_url(self):
+        user = self.request.user
+        if not user.has_completed_profile():
+            return reverse('profile')
+        return reverse('dashboard')
+
+
+    

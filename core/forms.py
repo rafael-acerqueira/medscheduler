@@ -1,5 +1,6 @@
 import datetime
-from datetime import date, timedelta
+from datetime import date
+
 from django.utils import timezone
 
 from django import forms
