@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto mt-8 space-y-8">
+  <h2 class="text-2xl font-bold text-blue-600 mb-6">Welcome, Dr. {{ user.get_full_name|default:user.username }}!</h2>
+  <div class="bg-white p-6 rounded-xl shadow mb-6">
+    <h3 class="font-semibold mb-2 text-gray-700">Next consultations</h3>
+    {% if upcoming %}
+      <ul class="divide-y divide-gray-100">
+        {% for a in upcoming %}
+          <li class="py-2 flex justify-between items-center">
+            <span>
+              <span class="font-semibold">{{ a.date|date:"d/m/Y" }} at {{ a.time|time:"H:i" }}</span>
+              with {{ a.patient.get_full_name|default:a.patient.username }}
+            </span>
+            <span class="text-xs px-2 py-1 rounded-lg
+              {% if a.status == 'confirmed' %}bg-blue-100 text-blue-700{% elif a.status == 'pending' %}bg-yellow-100 text-yellow-800{% elif a.status == 'cancelled' %}bg-gray-100 text-gray-400{% endif %}">
+              {{ a.get_status_display }}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="text-gray-500">No upcoming consultations.</div>
+    {% endif %}
+  </div>
+  <div class="bg-white p-6 rounded-xl shadow">
+    <h3 class="font-semibold mb-2 text-gray-700">Recent feedback</h3>
+    {% if feedbacks %}
+      <ul class="divide-y divide-gray-100">
+        {% for a in feedbacks %}
+          <li class="py-2">
+            {{ a.date|date:"d/m/Y" }} - {{ a.feedback.rating }}⭐: "{{ a.feedback.comment }}"
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="text-gray-500">No feedback yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

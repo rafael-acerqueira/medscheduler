@@ -42,7 +42,7 @@ class User(AbstractUser):
         elif self.is_doctor():
             try:
                 profile = self.doctorprofile
-                return all([profile.crm, profile.specialty])
+                return profile.crm and profile.specialties.exists()
             except DoctorProfile.DoesNotExist:
                 return False
         return True

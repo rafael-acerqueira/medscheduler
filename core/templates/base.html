@@ -5,8 +5,41 @@
     <title>{% block title %} | MedScheduler{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body  class="min-h-screen flex items-center justify-center bg-gray-100">
-    {% block content %}
+<body  class="min-h-screen bg-gray-100">
+    {% block navbar %}
+        <nav class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between shadow">
+          <a href="{% url 'dashboard' %}" class="font-bold text-blue-600 text-xl">MedScheduler</a>
+          {% if user.is_authenticated %}
+            <div class="space-x-4">
+              <a href="{% url 'dashboard' %}" class="text-gray-700 hover:text-blue-600 font-medium">Dashboard</a>
+              {% if user.is_patient %}
+                <a href="{% url 'appointment_list' %}" class="hover:text-blue-600">My Appointments</a>
+                <a href="{% url 'schedule_appointment' %}" class="hover:text-blue-600">New Appointment</a>
+              {% elif user.is_doctor %}
+                <a href="{% url 'doctor_appointments' %}" class="hover:text-blue-600">My Consultations</a>
+              {% endif %}
+              {% if user.is_admin %}
+                <a href="{% url 'admin:index' %}" class="hover:text-blue-600">Admin Panel</a>
+              {% endif %}
+              <a href="{% url 'edit-profile' %}" class="hover:text-blue-600">Profile</a>
+              <form action="{% url 'logout' %}" method="post" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="hover:text-red-600 bg-transparent border-none p-0 m-0 cursor-pointer">
+                  Logout
+                </button>
+              </form>
+            </div>
+          {% else %}
+            <div class="space-x-4">
+              <a href="{% url 'login' %}" class="hover:text-blue-600">Login</a>
+              <a href="{% url 'register' %}" class="hover:text-blue-600">Register</a>
+            </div>
+          {% endif %}
+        </nav>
     {% endblock %}
+     <main class="flex flex-col items-center justify-center min-h-[80vh] px-4">
+        {% block content %}
+        {% endblock %}
+     </main>
 </body>
 </html>
