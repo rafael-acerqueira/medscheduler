@@ -1,5 +1,6 @@
 import csv
-
+import requests
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -240,6 +241,7 @@ def doctors_by_specialty(request):
 @login_required
 def find_available_doctors(request):
     doctors = slots = None
+    specialty_id = request.GET.get('specialty')
     if request.method == 'POST':
         form = AvailabilitySearchForm(request.POST)
         if form.is_valid():
@@ -268,11 +270,11 @@ def find_available_doctors(request):
                     slots[doctor] = free
 
     else:
-        form = AvailabilitySearchForm()
+        form = AvailabilitySearchForm(initial={'specialty': specialty_id})
 
     return render(request, 'find_available.html', {
         'form': form,
-        'slots': slots,
+        'slots': slots
     })
 
 
@@ -544,3 +546,48 @@ def dashboard(request):
         return render(request, 'dashboard_admin.html', {'metrics': metrics})
     else:
         return redirect('login')
+
+
+def normalize_specialty(label):
+    label_clean = label.strip().title()
+    try:
+        return Specialty.objects.get(name__iexact=label_clean)
+    except Specialty.DoesNotExist:
+        return None
+
+def triage(request):
+    suggestion = None
+    suggested_specialty = None
+    error = None
+    SPECIALTIES = list(Specialty.objects.filter(is_active=True).values_list('name', flat=True))
+
+    if request.method == 'POST':
+        symptoms = request.POST.get('symptoms', '').strip()
+        if not symptoms:
+            error = "Please enter your symptoms."
+        else:
+            API_URL = "https://api-inference.huggingface.co/models/joeddav/xlm-roberta-large-xnli"
+            headers = {"Authorization": f"Bearer {settings.HF_API_TOKEN}"}
+            payload = {
+                "inputs": symptoms,
+                "parameters": {"candidate_labels": SPECIALTIES}
+            }
+
+            try:
+                response = requests.post(API_URL, headers=headers, json=payload, timeout=120)
+                result = response.json()
+
+                if "labels" in result and result["labels"]:
+                    suggestion = result["labels"][0]
+                    suggested_specialty = normalize_specialty(suggestion)
+                else:
+                    error = "The AI could not suggest a specialty."
+            except Exception as ex:
+                print(ex)
+                error = "An error occurred while contacting the AI service."
+
+    return render(request, "triage.html", {
+        "suggestion": suggestion,
+        "suggested_specialty": suggested_specialty,
+        "error": error,
+    })
