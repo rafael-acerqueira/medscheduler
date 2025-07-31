@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Intelligent Triage{% endblock %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100 py-10">
+  <div class="w-full max-w-lg bg-white p-8 rounded-2xl shadow-lg">
+    <h2 class="text-3xl font-bold mb-6 text-blue-600 text-center">Describe your symptoms</h2>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <textarea name="symptoms"
+                rows="4"
+                class="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-600 transition"
+                placeholder="E.g., fever, headache, cough..."
+                required>{{ request.POST.symptoms }}</textarea>
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold py-2 shadow transition">
+        Submit
+      </button>
+    </form>
+
+    {% if suggestion and suggested_specialty %}
+      <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 mt-6 text-center">
+        <div class="mb-2 font-semibold text-green-700 text-lg">Suggested specialty</div>
+        <div class="mb-3 text-green-900 font-bold text-xl">{{ suggested_specialty.name }}</div>
+        <form method="get" action="{% url 'find_available_doctors' %}" class="mt-2">
+          <input type="hidden" name="specialty" value="{{ suggested_specialty.id }}">
+          <button type="submit"
+                  class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow font-semibold transition">
+            Book with {{ suggested_specialty.name }}
+          </button>
+        </form>
+      </div>
+    {% elif suggestion and not suggested_specialty %}
+      <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl p-4 mt-6 text-center">
+        <div class="mb-2 font-semibold text-yellow-700 text-lg">Suggested specialty</div>
+        <div class="mb-3 font-bold text-yellow-900 text-xl">{{ suggestion }}</div>
+        <span>We couldn't find a matching specialty in our system.<br>Please choose manually.</span>
+      </div>
+    {% endif %}
+
+    {% if error %}
+      <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mt-6 text-center">
+        {{ error }}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
