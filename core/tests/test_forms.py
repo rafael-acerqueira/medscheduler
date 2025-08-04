@@ -127,3 +127,17 @@ def test_appointment_form_doctor_wrong_specialty(user_patient, user_doctor, spec
     form = AppointmentForm(data=data, user=user_patient)
     assert not form.is_valid()
     assert '__all__' in form.errors
+
+
+def test_appointment_form_rejects_holiday(user_patient, user_doctor, specialty, doctor_profile, settings):
+    holiday = datetime.date(2025, 12, 25)
+    data = {
+        "specialty": specialty.pk,
+        "doctor": user_doctor.pk,
+        "date": holiday,
+        "time": "09:00",
+        "reason": "Checkup",
+    }
+    form = AppointmentForm(data=data, user=user_patient)
+    assert not form.is_valid()
+    assert "Appointments cannot be scheduled on holidays." in str(form.errors)

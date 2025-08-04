@@ -261,7 +261,7 @@ WORK_START_HOUR = 8
 WORK_END_HOUR = 18
 DISABLED_WEEKDAYS = [5, 6]  # 5 = Saturday, 6 = Sunday
 HOLIDAYS = [  # yyyy-mm-dd
-    '2024-12-25',
+    '2025-12-25',
     '2025-01-01',
 ]
 
