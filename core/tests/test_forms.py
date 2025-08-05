@@ -1,5 +1,5 @@
 import pytest
-from core.forms import AppointmentForm
+from core.forms import AppointmentForm, AppointmentFeedbackForm
 from core.models import Appointment, Specialty
 import datetime
 
@@ -141,3 +141,16 @@ def test_appointment_form_rejects_holiday(user_patient, user_doctor, specialty, 
     form = AppointmentForm(data=data, user=user_patient)
     assert not form.is_valid()
     assert "Appointments cannot be scheduled on holidays." in str(form.errors)
+
+@pytest.mark.django_db
+def test_feedback_form_valid(appointment):
+    data = {"rating": 4, "comment": "Awesome Doctor"}
+    form = AppointmentFeedbackForm(data=data)
+    assert form.is_valid()
+
+@pytest.mark.django_db
+def test_feedback_form_rating_out_of_range(appointment):
+    data = {"rating": 6}
+    form = AppointmentFeedbackForm(data=data)
+    assert not form.is_valid()
+    assert "rating" in form.errors

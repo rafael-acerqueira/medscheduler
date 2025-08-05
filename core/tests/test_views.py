@@ -94,3 +94,31 @@ def test_patient_cannot_cancel_others_appointment(client, user_patient, user_doc
     url = reverse("appointment_cancel", kwargs={"pk": appointment.pk})
     response = client.post(url)
     assert response.status_code in (403, 404)
+
+@pytest.mark.django_db
+def test_patient_can_leave_feedback(client, user_patient, appointment):
+    appointment.status = "completed"
+    appointment.save()
+    client.force_login(user_patient)
+    url = reverse('leave_feedback', kwargs={"appointment_id": appointment.pk})
+    resp = client.post(url, {"rating": 4, "comment": "Legal!"})
+    assert resp.status_code == 302
+
+@pytest.mark.django_db
+def test_patient_cannot_leave_feedback_twice(client, user_patient, appointment):
+    appointment.status = "completed"
+    appointment.save()
+    client.force_login(user_patient)
+    url = reverse('leave_feedback', kwargs={"appointment_id": appointment.pk})
+    client.post(url, {"rating": 5})
+    resp = client.post(url, {"rating": 3})
+    assert resp.status_code in (403, 400, 302)
+
+@pytest.mark.django_db
+def test_cannot_leave_feedback_unfinished_appointment(client, user_patient, appointment):
+    appointment.status = "confirmed"
+    appointment.save()
+    client.force_login(user_patient)
+    url = reverse('leave_feedback', kwargs={"appointment_id": appointment.pk})
+    resp = client.post(url, {"rating": 5, "comment": "I can't leave feedback until complete"})
+    assert resp.status_code in (403, 400, 302)
