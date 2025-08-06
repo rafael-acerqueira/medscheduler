@@ -494,7 +494,7 @@ def leave_feedback(request, appointment_id):
             feedback.appointment = appointment
             feedback.save()
             messages.success(request, 'Feedback sent!')
-            return redirect('appointment_detail', appointment_id=appointment.id)
+            return redirect('appointment_detail', pk=appointment.pk)
     else:
         form = AppointmentFeedbackForm()
     return render(request, 'leave_feedback.html', {'form': form, 'appointment': appointment})
