@@ -1,4 +1,6 @@
 import csv
+import logging
+import json
 import requests
 from django.conf import settings
 from django.contrib import messages
@@ -6,6 +8,8 @@ from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
+from datetime import datetime, date
+from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Q
 from django.contrib.auth.views import LoginView
@@ -14,9 +18,6 @@ from django.utils import timezone
 from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
     AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm, AppointmentFeedbackForm, LoginForm
 from .models import User, Appointment, DoctorProfile, Specialty
-
-import datetime
-from datetime import date
 
 
 def register(request):
@@ -341,7 +342,7 @@ def appointment_cancel(request, pk):
 
     now = timezone.now()
     dt_appointment = timezone.make_aware(
-        datetime.datetime.combine(appointment.date, appointment.time),
+        datetime.combine(appointment.date, appointment.time),
         timezone.get_current_timezone()
     )
     can_cancel = (
@@ -591,3 +592,23 @@ def triage(request):
         "suggested_specialty": suggested_specialty,
         "error": error,
     })
+
+logger = logging.getLogger(__name__)
+
+@require_POST
+def simulate_notification(request):
+    try:
+        data = json.loads(request.body)
+        appointment_id = data.get("appointment_id")
+        notification_type = data.get("type", "reminder")
+
+        logger.info(
+            f"[{datetime.now()}] Simulated notification ({notification_type}) for appointment ID {appointment_id}"
+        )
+
+        return JsonResponse({
+            "message": f"Simulated '{notification_type}' notification for appointment {appointment_id}"
+        })
+    except Exception as e:
+        print("Error: ", e)
+        return JsonResponse({"error": str(e)}, status=400)

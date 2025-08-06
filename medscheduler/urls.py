@@ -22,7 +22,8 @@ from core.forms import CustomPasswordResetForm, CustomSetPasswordForm, CustomPas
 from core.views import register, profile, edit_profile, user_list, edit_profile_admin, toggle_user_status, \
     delete_account, schedule_appointment, doctors_by_specialty, find_available_doctors, appointment_list, \
     appointment_detail, appointment_cancel, appointment_reschedule, export_appointments_csv, doctor_appointments, \
-    doctor_appointment_detail, export_doctor_appointments_csv, leave_feedback, CustomLoginView, dashboard, triage
+    doctor_appointment_detail, export_doctor_appointments_csv, leave_feedback, CustomLoginView, dashboard, triage, \
+    simulate_notification
 
 urlpatterns = [
     path('', dashboard, name='dashboard'),
@@ -65,5 +66,6 @@ urlpatterns = [
     path('doctor/appointments/<int:pk>/', doctor_appointment_detail, name='doctor_appointment_detail'),
     path('doctor/appointments/export/', export_doctor_appointments_csv, name='export_doctor_appointments_csv'),
     path('appointments/<int:appointment_id>/feedback/', leave_feedback, name='leave_feedback'),
-    path('triage/', triage, name='triage')
+    path('triage/', triage, name='triage'),
+    path('notifications/simulate/', simulate_notification, name='simulate_notification')
 ]
