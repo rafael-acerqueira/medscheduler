@@ -1,13 +1,14 @@
 import csv
 import requests
 from django.conf import settings
+from collections import Counter
 from django.contrib import messages
 from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Q
+from django.db.models import Q,Avg
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
 from django.utils import timezone
@@ -525,9 +526,26 @@ def dashboard(request):
     elif user.is_doctor():
         upcoming = Appointment.objects.filter(doctor=user, date__gte=today).order_by('date', 'time')[:5]
         feedbacks = Appointment.objects.filter(doctor=user, status='completed', feedback__isnull=False).order_by('-date', '-time')[:5]
+        average_rating = Appointment.objects.filter(doctor=user, status='completed', feedback__isnull=False
+                         ).aggregate(avg_rating=Avg('feedback__rating'))['avg_rating'] or 0
+        monthly_appointments = Appointment.objects.filter(
+                                                            doctor=user,
+                                                            status='completed',
+                                                            date__month=today.month,
+                                                            date__year=today.year
+                                                        ).count()
+        specialties = [
+                                                    s.name
+                                                    for a in Appointment.objects.filter(doctor=user)
+                                                    for s in a.doctor.doctorprofile.specialties.all()
+                                                ]
+        most_common_specialties = Counter(specialties).most_common(3)
         return render(request, 'dashboard_doctor.html', {
             'upcoming': upcoming,
             'feedbacks': feedbacks,
+            'average_rating': round(average_rating, 2),
+            'monthly_appointments': monthly_appointments,
+            'most_common_specialties': most_common_specialties
         })
     elif user.is_admin:
         User = get_user_model()
