@@ -519,9 +519,28 @@ def dashboard(request):
     if user.is_patient():
         upcoming = Appointment.objects.filter(patient=user, date__gte=today).order_by('date', 'time')[:5]
         recent = Appointment.objects.filter(patient=user, date__lt=today).order_by('-date', '-time')[:5]
+        upcoming_count = Appointment.objects.filter(patient=user, date__gte=today).count()
+        past_count = Appointment.objects.filter(patient=user, date__lt=today).count()
+
+        result = Appointment.objects.filter(
+            patient=user,
+            feedback__isnull=False
+        ).aggregate(avg_rating=Avg('feedback__rating'))
+        average_given_rating = round(result['avg_rating'] or 0, 2)
+
+        doctors = [
+            a.doctor.get_full_name() if hasattr(a.doctor, "get_full_name") else str(a.doctor)
+            for a in Appointment.objects.filter(patient=user)
+        ]
+        most_visited_doctors = Counter(doctors).most_common(3)
+
         return render(request, 'dashboard_patient.html', {
             'upcoming': upcoming,
             'recent': recent,
+            'upcoming_count': upcoming_count,
+            'past_count': past_count,
+            'average_given_rating': average_given_rating,
+            'most_visited_doctors': most_visited_doctors,
         })
     elif user.is_doctor():
         upcoming = Appointment.objects.filter(doctor=user, date__gte=today).order_by('date', 'time')[:5]
