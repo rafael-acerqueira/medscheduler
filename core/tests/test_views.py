@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 from django.utils import timezone
-from core.models import User, Appointment
+from core.models import User, Appointment, AppointmentFeedback
 import datetime
 
 def get_next_weekday(start_date, allowed_days=(0, 1, 2, 3, 4)):
@@ -122,3 +122,74 @@ def test_cannot_leave_feedback_unfinished_appointment(client, user_patient, appo
     url = reverse('leave_feedback', kwargs={"appointment_id": appointment.pk})
     resp = client.post(url, {"rating": 5, "comment": "I can't leave feedback until complete"})
     assert resp.status_code in (403, 400, 302)
+
+
+@pytest.mark.django_db
+def test_average_rating_displayed(client, user_doctor, user_patient, specialty):
+
+    appointment = Appointment.objects.create(
+        patient=user_patient,
+        doctor=user_doctor,
+        specialty=specialty,
+        date=timezone.now().date() - datetime.timedelta(days=1),
+        time=datetime.time(10, 0),
+        reason="Checkup",
+        status="completed"
+    )
+    AppointmentFeedback.objects.create(appointment=appointment, rating=4, comment="Great Service!")
+
+    client.force_login(user_doctor)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "⭐ Average rating" in response.content.decode()
+    assert "4.0" in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_monthly_appointments_count(client, user_doctor, user_patient, specialty):
+    today = timezone.now().date()
+    Appointment.objects.create(
+        patient=user_patient,
+        doctor=user_doctor,
+        specialty=specialty,
+        date=today,
+        time=datetime.time(10, 0),
+        reason="Checkup",
+        status="completed"
+    )
+
+    client.force_login(user_doctor)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "Appointments this month" in response.content.decode()
+    assert "1" in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_most_common_specialties_display(client, user_doctor, user_patient, specialty):
+    user_doctor.doctorprofile.specialties.add(specialty)
+
+    Appointment.objects.create(
+        patient=user_patient,
+        doctor=user_doctor,
+        specialty=specialty,
+        date=timezone.now().date(),
+        time=datetime.time(9, 0),
+        reason="Checkup",
+        status="confirmed"
+    )
+    Appointment.objects.create(
+        patient=user_patient,
+        doctor=user_doctor,
+        specialty=specialty,
+        date=timezone.now().date() + datetime.timedelta(days=1),
+        time=datetime.time(10, 0),
+        reason="Checkup",
+        status="confirmed"
+    )
+
+    client.force_login(user_doctor)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "Most frequent specialties" in response.content.decode()
+    assert specialty.name in response.content.decode()
