@@ -1,13 +1,15 @@
 import csv
 import requests
 from django.conf import settings
+from collections import Counter
 from django.contrib import messages
 from django.contrib.auth import login, logout, get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Q
+from django.db.models import Q,Avg, Count
+from django.db.models.functions import TruncMonth
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
 from django.utils import timezone
@@ -518,16 +520,52 @@ def dashboard(request):
     if user.is_patient():
         upcoming = Appointment.objects.filter(patient=user, date__gte=today).order_by('date', 'time')[:5]
         recent = Appointment.objects.filter(patient=user, date__lt=today).order_by('-date', '-time')[:5]
+        upcoming_count = Appointment.objects.filter(patient=user, date__gte=today).count()
+        past_count = Appointment.objects.filter(patient=user, date__lt=today).count()
+
+        result = Appointment.objects.filter(
+            patient=user,
+            feedback__isnull=False
+        ).aggregate(avg_rating=Avg('feedback__rating'))
+        average_given_rating = round(result['avg_rating'] or 0, 2)
+
+        doctors = [
+            a.doctor.get_full_name() if hasattr(a.doctor, "get_full_name") else str(a.doctor)
+            for a in Appointment.objects.filter(patient=user)
+        ]
+        most_visited_doctors = Counter(doctors).most_common(3)
+
         return render(request, 'dashboard_patient.html', {
             'upcoming': upcoming,
             'recent': recent,
+            'upcoming_count': upcoming_count,
+            'past_count': past_count,
+            'average_given_rating': average_given_rating,
+            'most_visited_doctors': most_visited_doctors,
         })
     elif user.is_doctor():
         upcoming = Appointment.objects.filter(doctor=user, date__gte=today).order_by('date', 'time')[:5]
         feedbacks = Appointment.objects.filter(doctor=user, status='completed', feedback__isnull=False).order_by('-date', '-time')[:5]
+        average_rating = Appointment.objects.filter(doctor=user, status='completed', feedback__isnull=False
+                         ).aggregate(avg_rating=Avg('feedback__rating'))['avg_rating'] or 0
+        monthly_appointments = Appointment.objects.filter(
+                                                            doctor=user,
+                                                            status='completed',
+                                                            date__month=today.month,
+                                                            date__year=today.year
+                                                        ).count()
+        specialties = [
+                                                    s.name
+                                                    for a in Appointment.objects.filter(doctor=user)
+                                                    for s in a.doctor.doctorprofile.specialties.all()
+                                                ]
+        most_common_specialties = Counter(specialties).most_common(3)
         return render(request, 'dashboard_doctor.html', {
             'upcoming': upcoming,
             'feedbacks': feedbacks,
+            'average_rating': round(average_rating, 2),
+            'monthly_appointments': monthly_appointments,
+            'most_common_specialties': most_common_specialties
         })
     elif user.is_admin:
         User = get_user_model()
@@ -543,7 +581,37 @@ def dashboard(request):
             'total_specialties': Specialty.objects.count(),
             'recent_users': User.objects.order_by('-date_joined')[:5],
         }
-        return render(request, 'dashboard_admin.html', {'metrics': metrics})
+
+        monthly_appointments = (
+            Appointment.objects
+            .annotate(month=TruncMonth('date'))
+            .values('month')
+            .annotate(count=Count('id'))
+            .order_by('month')
+        )
+
+
+        top_doctors = (
+            Appointment.objects
+            .values('doctor__id', 'doctor__first_name', 'doctor__last_name')
+            .annotate(total=Count('id'))
+            .order_by('-total')[:5]
+        )
+
+
+        specialty_distribution = (
+            Appointment.objects
+            .values('specialty__name')
+            .annotate(total=Count('id'))
+            .order_by('-total')
+        )
+
+        return render(request, 'dashboard_admin.html', {
+            'metrics': metrics,
+            'monthly_appointments': monthly_appointments,
+            'top_doctors': top_doctors,
+            'specialty_distribution': specialty_distribution,
+        })
     else:
         return redirect('login')
 

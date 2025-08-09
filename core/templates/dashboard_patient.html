@@ -4,6 +4,25 @@
 <div class="max-w-3xl mx-auto mt-8 space-y-8">
   <h2 class="text-2xl font-bold text-blue-600 mb-6">Welcome, {{ user.get_full_name|default:user.username }}!</h2>
   <div class="bg-white p-6 rounded-xl shadow mb-6">
+    <h3 class="font-semibold mb-2 text-gray-700">Your metrics</h3>
+    <ul class="text-gray-700 space-y-1">
+      <li>📅 Upcoming appointments: <span class="font-semibold">{{ upcoming_count }}</span></li>
+      <li>📁 Past appointments: <span class="font-semibold">{{ past_count }}</span></li>
+      <li>⭐ Average rating you gave: <span class="font-semibold">{{ average_given_rating }}</span></li>
+      <li>👨‍⚕️ Most visited doctors:
+        {% if most_visited_doctors %}
+          <ul class="list-disc list-inside ml-4">
+            {% for doctor, count in most_visited_doctors %}
+              <li>{{ doctor }} ({{ count }})</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <span class="text-gray-500">No data</span>
+        {% endif %}
+      </li>
+    </ul>
+  </div>
+  <div class="bg-white p-6 rounded-xl shadow mb-6">
     <h3 class="font-semibold mb-2 text-gray-700">Next appointments</h3>
     {% if upcoming %}
       <ul class="divide-y divide-gray-100">
