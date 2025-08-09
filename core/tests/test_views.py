@@ -228,3 +228,34 @@ def test_patient_dashboard_metrics_display(client, user_patient, user_doctor, sp
     assert "Most visited doctors" in html
     assert "5.0" in html  # rating
     assert user_doctor.get_full_name() in html or user_doctor.username in html
+
+@pytest.mark.django_db
+def test_admin_dashboard_displays_metrics(client, user_patient, user_doctor, specialty, django_user_model):
+    admin = django_user_model.objects.create_user(username="admin", password="admin123", role="admin", is_active=True)
+
+    Appointment.objects.create(
+        patient=user_patient,
+        doctor=user_doctor,
+        specialty=specialty,
+        date=timezone.now().date().replace(day=1),
+        time=datetime.time(10, 0),
+        status="confirmed"
+    )
+    Appointment.objects.create(
+        patient=user_patient,
+        doctor=user_doctor,
+        specialty=specialty,
+        date=timezone.now().date().replace(month=timezone.now().date().month - 1, day=1),
+        time=datetime.time(10, 0),
+        status="confirmed"
+    )
+
+    client.force_login(admin)
+    response = client.get(reverse("dashboard"))
+    html = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Appointments per Month" in html
+    assert "Top 5 Doctors" in html
+    assert "Appointments by Specialty" in html
+    assert specialty.name in html

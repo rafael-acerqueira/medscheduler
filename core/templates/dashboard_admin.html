@@ -56,5 +56,37 @@
       {% endfor %}
     </ul>
   </div>
+  <div class="bg-white p-6 rounded-xl shadow mt-8">
+    <h3 class="font-semibold text-lg text-gray-700 mb-2">Appointments per Month</h3>
+    <ul class="text-gray-700 space-y-1">
+      {% for item in monthly_appointments %}
+        <li>{{ item.month|date:"F Y" }}: <span class="font-semibold">{{ item.count }}</span></li>
+      {% empty %}
+        <li class="text-gray-500">No data</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="bg-white p-6 rounded-xl shadow mt-8">
+    <h3 class="font-semibold text-lg text-gray-700 mb-2">Top 5 Doctors</h3>
+    <ul class="text-gray-700 space-y-1">
+      {% for doc in top_doctors %}
+        <li>Dr. {{ doc.doctor__first_name }} {{ doc.doctor__last_name }} — <span class="font-semibold">{{ doc.total }}</span> appointments</li>
+      {% empty %}
+        <li class="text-gray-500">No data</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="bg-white p-6 rounded-xl shadow mt-8">
+    <h3 class="font-semibold text-lg text-gray-700 mb-2">Appointments by Specialty</h3>
+    <ul class="text-gray-700 space-y-1">
+      {% for s in specialty_distribution %}
+        <li>{{ s.specialty__name }}: <span class="font-semibold">{{ s.total }}</span></li>
+      {% empty %}
+        <li class="text-gray-500">No data</li>
+      {% endfor %}
+    </ul>
+  </div>
 </div>
 {% endblock %}

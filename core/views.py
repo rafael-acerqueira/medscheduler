@@ -8,7 +8,8 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.db.models import Q,Avg
+from django.db.models import Q,Avg, Count
+from django.db.models.functions import TruncMonth
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
 from django.utils import timezone
@@ -580,7 +581,37 @@ def dashboard(request):
             'total_specialties': Specialty.objects.count(),
             'recent_users': User.objects.order_by('-date_joined')[:5],
         }
-        return render(request, 'dashboard_admin.html', {'metrics': metrics})
+
+        monthly_appointments = (
+            Appointment.objects
+            .annotate(month=TruncMonth('date'))
+            .values('month')
+            .annotate(count=Count('id'))
+            .order_by('month')
+        )
+
+
+        top_doctors = (
+            Appointment.objects
+            .values('doctor__id', 'doctor__first_name', 'doctor__last_name')
+            .annotate(total=Count('id'))
+            .order_by('-total')[:5]
+        )
+
+
+        specialty_distribution = (
+            Appointment.objects
+            .values('specialty__name')
+            .annotate(total=Count('id'))
+            .order_by('-total')
+        )
+
+        return render(request, 'dashboard_admin.html', {
+            'metrics': metrics,
+            'monthly_appointments': monthly_appointments,
+            'top_doctors': top_doctors,
+            'specialty_distribution': specialty_distribution,
+        })
     else:
         return redirect('login')
 
