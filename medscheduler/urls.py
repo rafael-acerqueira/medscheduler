@@ -19,15 +19,17 @@ from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from core.forms import CustomPasswordResetForm, CustomSetPasswordForm, CustomPasswordChangeForm
-from core.views import register, profile, edit_profile, user_list, edit_profile_admin, toggle_user_status, \
+from core.views import profile, edit_profile, user_list, edit_profile_admin, toggle_user_status, \
     delete_account, schedule_appointment, doctors_by_specialty, find_available_doctors, appointment_list, \
     appointment_detail, appointment_cancel, appointment_reschedule, export_appointments_csv, doctor_appointments, \
-    doctor_appointment_detail, export_doctor_appointments_csv, leave_feedback, CustomLoginView, dashboard, triage
+    doctor_appointment_detail, export_doctor_appointments_csv, leave_feedback, CustomLoginView, dashboard, triage, \
+    register_patient, register_doctor
 
 urlpatterns = [
     path('', dashboard, name='dashboard'),
     path('admin/', admin.site.urls),
-    path('register/', register, name='register'),
+    path('register/patient/', register_patient, name='register_patient'),
+    path('register/doctor/', register_doctor, name='register_doctor'),
     path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('profile/', profile, name='profile'),

@@ -34,6 +34,19 @@
         {{ form.email.label_tag }}{% if form.email.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
         {{ form.email }}
       </div>
+      {% if form.crm %}
+        <div>
+          {{ form.crm.label_tag }}{% if form.crm.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
+          {{ form.crm }}
+        </div>
+      {% endif %}
+
+      {% if form.cpf %}
+        <div>
+          {{ form.cpf.label_tag }}{% if form.cpf.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
+          {{ form.cpf }}
+        </div>
+      {% endif %}
       <div>
         {{ form.password.label_tag }}{% if form.password.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
         {{ form.password }}
@@ -41,10 +54,6 @@
       <div>
         {{ form.password2.label_tag }}{% if form.password2.field.required %}<span class="text-red-500 ml-1">*</span>{% endif %}
         {{ form.password2 }}
-      </div>
-      <div>
-        {{ form.role.label_tag }}
-        {{ form.role }}
       </div>
       <button
         type="submit"

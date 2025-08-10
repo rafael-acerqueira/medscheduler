@@ -14,7 +14,8 @@ from django.contrib.auth.views import LoginView
 from django.urls import reverse
 from django.utils import timezone
 from .forms import UserRegistrationForm, PatientProfileForm, DoctorProfileForm, UserEditForm, ConfirmPasswordForm, \
-    AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm, AppointmentFeedbackForm, LoginForm
+    AppointmentForm, AvailabilitySearchForm, AppointmentRescheduleForm, AppointmentFeedbackForm, LoginForm, \
+    PatientRegistrationForm, DoctorRegistrationForm
 from .models import User, Appointment, DoctorProfile, Specialty
 
 import datetime
@@ -659,3 +660,28 @@ def triage(request):
         "suggested_specialty": suggested_specialty,
         "error": error,
     })
+
+
+def register_patient(request):
+    if request.method == 'POST':
+        form = PatientRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('profile')
+    else:
+        form = PatientRegistrationForm()
+    return render(request, 'register.html', {'form': form})
+
+
+def register_doctor(request):
+    if request.method == 'POST':
+        form = DoctorRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect('profile')
+    else:
+        form = DoctorRegistrationForm()
+
+    return render(request, 'register.html', {'form': form})
