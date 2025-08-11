@@ -1,8 +1,9 @@
 import datetime
 from datetime import date
 
+from django.core.exceptions import ValidationError
 from django.utils import timezone
-
+from django.db import transaction
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, PasswordChangeForm
 
@@ -27,17 +28,10 @@ class UserRegistrationForm(forms.ModelForm):
             'autocomplete': 'new-password',
         })
     )
-    role = forms.ChoiceField(
-        label="Role",
-        choices=ROLE_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
-        })
-    )
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password2', 'role']
+        fields = ['username', 'email', 'password', 'password2']
         widgets = {
             'username': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600',
@@ -87,6 +81,77 @@ class UserEditForm(forms.ModelForm):
                 'placeholder': 'Email address'
             }),
         }
+
+
+class PatientRegistrationForm(UserRegistrationForm):
+    cpf = forms.CharField(
+        label="CPF",
+        max_length=11,
+        required=True,
+        error_messages={"required": "CPF is required."},
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600',
+            'placeholder': 'Enter your CPF (only numbers)',
+        })
+    )
+
+    class Meta(UserRegistrationForm.Meta):
+        fields = ['username', 'email', 'password', 'password2', 'cpf']
+
+    def clean_cpf(self):
+        cpf = (self.cleaned_data.get('cpf') or "").strip()
+        if not cpf:
+            raise ValidationError("CPF is required.")
+        if not cpf.isdigit() or len(cpf) != 11:
+            raise ValidationError("CPF must have 11 digits.")
+        if PatientProfile.objects.filter(cpf=cpf).exists():
+            raise ValidationError("This CPF is already in use.")
+        return cpf
+
+    @transaction.atomic
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = User.PATIENT
+        user.set_password(self.cleaned_data['password'])
+        if commit:
+            user.save()
+        PatientProfile.objects.create(user=user, cpf=self.cleaned_data['cpf'])
+        return user
+
+
+class DoctorRegistrationForm(UserRegistrationForm):
+    crm = forms.CharField(
+        label="CRM",
+        max_length=20,
+        required=True,
+        error_messages={"required": "CRM is required."},
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600',
+            'placeholder': 'Enter your CRM',
+        })
+    )
+
+    class Meta(UserRegistrationForm.Meta):
+        fields = ['username', 'email', 'password', 'password2', 'crm']
+
+    def clean_crm(self):
+        crm = self.cleaned_data.get('crm', '').strip() or None
+        if not crm:
+            raise ValidationError("CRM is required.")
+
+        if DoctorProfile.objects.filter(crm=crm).exists():
+            raise ValidationError("This CRM is already in use.")
+        return crm
+
+    @transaction.atomic
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = User.DOCTOR
+        user.set_password(self.cleaned_data['password'])
+        if commit:
+            user.save()
+        DoctorProfile.objects.create(user=user, crm=self.cleaned_data['crm'])
+        return user
 
 
 class LoginForm(AuthenticationForm):
