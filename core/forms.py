@@ -87,6 +87,8 @@ class PatientRegistrationForm(UserRegistrationForm):
     cpf = forms.CharField(
         label="CPF",
         max_length=11,
+        required=True,
+        error_messages={"required": "CPF is required."},
         widget=forms.TextInput(attrs={
             'class': 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600',
             'placeholder': 'Enter your CPF (only numbers)',
@@ -121,6 +123,8 @@ class DoctorRegistrationForm(UserRegistrationForm):
     crm = forms.CharField(
         label="CRM",
         max_length=20,
+        required=True,
+        error_messages={"required": "CRM is required."},
         widget=forms.TextInput(attrs={
             'class': 'w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600',
             'placeholder': 'Enter your CRM',
